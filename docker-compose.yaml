@@ -1,0 +1,55 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: admanager_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "127.0.0.1:7432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: admanager_qdrant
+    restart: always
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  backend:
+    build: .
+    container_name: admanager_api
+    restart: always
+    depends_on:
+      - db
+      - qdrant
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+      - ./protected:/app/protected
+    command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000" ]
+
+  bot:
+    build: .
+    container_name: admanager_bot
+    restart: always
+    depends_on:
+      - db
+      - backend
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src
+    command: [ "python", "-m", "src.bot.bot" ]
+
+volumes:
+  postgres_data:
+  qdrant_data:
