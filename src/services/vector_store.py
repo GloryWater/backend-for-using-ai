@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Yauheni Sytsevich. All Rights Reserved.
+# Unauthorized copying of this file, via any medium is strictly prohibited.
+# Proprietary and confidential.
+
 import hashlib
 import json
 import logging
@@ -5,7 +9,13 @@ import os
 import struct
 
 from qdrant_client import AsyncQdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import (
+    Distance,
+    Filter,
+    HasIdCondition,
+    PointStruct,
+    VectorParams,
+)
 from sentence_transformers import SentenceTransformer
 from starlette.concurrency import run_in_threadpool
 
@@ -130,23 +140,22 @@ class VectorStore:
     async def _upsert_missing(
         self, batch: list[tuple[int, str, dict]]
     ) -> tuple[int, int]:
-        """Проверяет какие ID уже есть в Qdrant, вставляет только новые.
-
-        Returns:
-            (added_count, skipped_count)
-        """
+        """Проверяет какие ID уже есть в Qdrant, вставляет только новые."""
         ids = [pid for pid, _, _ in batch]
 
-        # Запрашиваем существующие точки (без payload/vector — экономим трафик)
-        existing = await self._client.query_points(
+        # Проверяем существующие через scroll с фильтром
+        from qdrant_client.models import Filter, HasIdCondition
+
+        existing_points, _ = await self._client.scroll(
             collection_name=self._collection,
-            ids=ids,
+            scroll_filter=Filter(must=[HasIdCondition(has_id=ids)]),
+            limit=len(ids),
             with_payload=False,
             with_vectors=False,
         )
-        existing_ids = {p.id for p in existing}
+        existing_ids = {p.id for p in existing_points}
 
-        # Фильтруем — оставляем только новые
+        # Оставляем только новые
         new = [
             (pid, text, payload)
             for pid, text, payload in batch
@@ -157,7 +166,7 @@ class VectorStore:
         if not new:
             return 0, skipped
 
-        # Векторизуем только новые тексты
+        # Векторизуем только новые
         texts = [text for _, text, _ in new]
         embeddings = await run_in_threadpool(
             self._model.encode, texts, batch_size=32, show_progress_bar=False

@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Yauheni Sytsevich. All Rights Reserved.
+# Unauthorized copying of this file, via any medium is strictly prohibited.
+# Proprietary and confidential.
+
 from fastapi import APIRouter, HTTPException
 
 from src.database.crud import validate_license

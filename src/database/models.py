@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Yauheni Sytsevich. All Rights Reserved.
+# Unauthorized copying of this file, via any medium is strictly prohibited.
+# Proprietary and confidential.
+
 import datetime
 
 from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, String, func
@@ -9,8 +13,6 @@ from src.database.db import Base
 class User(Base):
     __tablename__ = "users"
 
-    # Telegram ID - используем BigInteger, так как ID могут быть длинными.
-    # autoincrement=False, так как мы сами задаем ID при создании.
     telegram_id: Mapped[int] = mapped_column(
         BigInteger, primary_key=True, autoincrement=False, index=True
     )

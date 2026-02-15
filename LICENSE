@@ -1,0 +1,27 @@
+PROPRIETARY SOFTWARE LICENSE AGREEMENT
+
+Copyright (c) 2026 Yauheni Sytsevich
+All Rights Reserved.
+
+1. GRANT OF LICENSE
+This software, including all source code, binaries, documentation, and associated assets ("Software"), is the confidential and proprietary property of [COPYRIGHT HOLDER NAME] ("Licensor"). The Software is protected by copyright laws and international copyright treaties, as well as other intellectual property laws and treaties.
+
+2. RESTRICTIONS
+By accessing, viewing, or using this Software, you agree to the following restrictions:
+
+   a) NO COPYING: You may not copy, reproduce, distribute, republish, download, display, post, or transmit the Software in any form or by any means, including but not limited to electronic, mechanical, photocopying, recording, or otherwise, without the prior written permission of the Licensor.
+
+   b) NO MODIFICATION: You may not modify, adapt, translate, or create derivative works based upon the Software.
+
+   c) NO REVERSE ENGINEERING: You may not reverse engineer, decompile, disassemble, or attempt to derive the source code or underlying algorithms of any compiled or binary portions of the Software (including, but not limited to, the Lua loader, encryption logic, and authentication mechanisms), except to the extent that such activity is expressly permitted by applicable law notwithstanding this limitation.
+
+   d) NO COMMERCIAL USE: You may not use this Software for any commercial purpose, including but not limited to selling, renting, leasing, or offering it as a service (SaaS), without a valid commercial license agreement explicitly granted by the Licensor.
+
+3. UNAUTHORIZED USE
+Any use of the Software not expressly authorized by this Agreement is a violation of copyright laws and constitutes a material breach of this Agreement. Unauthorized use may result in severe civil and criminal penalties.
+
+4. DISCLAIMER OF WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+5. TERMINATION
+This License is effective until terminated. Your rights under this License will terminate automatically without notice from the Licensor if you fail to comply with any term(s) of this License. Upon termination, you must cease all use of the Software and destroy all copies, full or partial, of the Software.
