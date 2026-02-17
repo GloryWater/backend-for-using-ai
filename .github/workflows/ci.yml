@@ -44,7 +44,7 @@ jobs:
               run: uv sync --frozen
 
             - name: Run Ruff (Linter)
-              run: uv run ruff check .
+              run: uvx run ruff check .
 
             - name: Run Tests
               env:

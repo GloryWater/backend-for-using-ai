@@ -26,3 +26,8 @@ dependencies = [
     "types-aiofiles>=25.1.0.20251011",
     "uvicorn>=0.30.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.1",
+]
