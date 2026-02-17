@@ -17,6 +17,7 @@ dependencies = [
     "pre-commit>=4.5.1",
     "pydantic>=2.8.0",
     "pydantic-settings>=2.4.0",
+    "pytest>=9.0.2",
     "python-multipart>=0.0.9",
     "qdrant-client>=1.12.1",
     "requests>=2.32.0",
