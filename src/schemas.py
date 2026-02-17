@@ -187,4 +187,4 @@ TributeWebhookEvent = Annotated[
     Field(discriminator="name"),
 ]
 
-webhook_adapter = TypeAdapter(TributeWebhookEvent)
+webhook_adapter: TypeAdapter = TypeAdapter(TributeWebhookEvent)

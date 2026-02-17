@@ -12,7 +12,6 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
     Distance,
     Filter,
-    HasIdCondition,
     PointStruct,
     VectorParams,
 )
@@ -144,7 +143,7 @@ class VectorStore:
         ids = [pid for pid, _, _ in batch]
 
         # Проверяем существующие через scroll с фильтром
-        from qdrant_client.models import Filter, HasIdCondition
+        from qdrant_client.models import HasIdCondition
 
         existing_points, _ = await self._client.scroll(
             collection_name=self._collection,

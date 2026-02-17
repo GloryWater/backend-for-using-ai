@@ -5,7 +5,6 @@
 import logging
 import os
 import uuid
-from typing import List
 
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from qdrant_client import AsyncQdrantClient

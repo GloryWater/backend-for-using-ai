@@ -14,6 +14,7 @@ dependencies = [
     "langchain-community>=0.3.21",
     "numpy<2.0",
     "openai>=1.40.0",
+    "pre-commit>=4.5.1",
     "pydantic>=2.8.0",
     "pydantic-settings>=2.4.0",
     "python-multipart>=0.0.9",
@@ -22,5 +23,6 @@ dependencies = [
     "scikit-learn>=1.5.0",
     "sentence-transformers>=3.0.0",
     "sqlalchemy>=2.0.30",
+    "types-aiofiles>=25.1.0.20251011",
     "uvicorn>=0.30.0",
 ]
