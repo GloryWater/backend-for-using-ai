@@ -50,5 +50,24 @@ jobs:
               env:
                   # Передаем URL тестовой базы данных
                   DATABASE_URL: postgresql+asyncpg://postgres:password@localhost:5432/admanager_test
-                  BOT_TOKEN: "fake_token" # Для тестов используем заглушки
+                  DB_USER: postgres
+                  DB_PASS: password
+                  DB_NAME: admanager_test
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+
+                  # --- Фейковые ключи (чтобы Pydantic не падал) ---
+                  BOT_TOKEN: "fake_bot_token"
+                  LLM_API_KEY: "fake_llm_key"
+                  LLM_BASE_URL: "https://fake.url/v1"
+                  LLM_MODEL: "gpt-fake"
+                  TRIBUTE_API_KEY: "fake_tribute_key"
+                  CRYPTOCLOUD_API_KEY: "fake_crypto_key"
+                  CRYPTOCLOUD_SHOP_ID: "fake_shop_id"
+                  CRYPTOCLOUD_SECRET: "fake_secret"
+
+                  # --- Настройки Qdrant ---
+                  QDRANT_URL: "http://localhost:6333"
+                  QDRANT_COLLECTION: "test_collection"
+
               run: uv run pytest
