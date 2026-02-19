@@ -7,6 +7,7 @@
 [![alt text](https://img.shields.io/badge/Vector_DB-Qdrant-D32F2F?logo=qdrant&logoColor=white)](https://qdrant.tech/)
 [![alt text](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![alt text](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![alt text](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml)
 
 Сервис автоматического редактирования рекламных объявлений с использованием LLM (Large Language Models) и RAG (Retrieval-Augmented Generation). Включает Telegram-бота для управления лицензиями и приёма платежей.
 
