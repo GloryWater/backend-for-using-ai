@@ -1,4 +1,7 @@
 services:
+  # ---------------------------------------------------
+  # База данных (PostgreSQL)
+  # ---------------------------------------------------
   db:
     image: postgres:15-alpine
     container_name: admanager_db
@@ -7,11 +10,21 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
+    # Оставляем доступ только изнутри сервера (безопасность)
+    # Если нужно подключаться с компа — используй SSH Tunnel
     ports:
-      - "127.0.0.1:7432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ---------------------------------------------------
+  # Векторная БД (Qdrant)
+  # ---------------------------------------------------
   qdrant:
     image: qdrant/qdrant:latest
     container_name: admanager_qdrant
@@ -21,34 +34,62 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
+  # ---------------------------------------------------
+  # API Backend (FastAPI)
+  # ---------------------------------------------------
   backend:
-    build: .
+    # 👇 Тот самый образ, который собирает GitHub Actions
+    image: ghcr.io/GloryWater/admanager:latest
     container_name: admanager_api
     restart: always
     depends_on:
-      - db
-      - qdrant
-    ports:
-      - "8000:8000"
+      db:
+        condition: service_healthy # Ждем, пока база реально запустится
+      qdrant:
+        condition: service_started
     env_file:
       - .env
-    volumes:
-      - ./src:/app/src
-      - ./protected:/app/protected
-    command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000" ]
+    # Команда запуска API
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    # Метка для Watchtower: "Обновляй меня!"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
+  # ---------------------------------------------------
+  # Telegram Bot (Aiogram)
+  # ---------------------------------------------------
   bot:
-    build: .
+    # 👇 Используем ТОТ ЖЕ САМЫЙ образ, но другую команду
+    image: ghcr.io/GloryWater/admanager:latest
     container_name: admanager_bot
     restart: always
     depends_on:
-      - db
       - backend
+      - db
     env_file:
       - .env
+    # Команда запуска бота
+    command: ["python", "-m", "src.bot.bot"]
+    # Метка для Watchtower
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+
+  # ---------------------------------------------------
+  # Автоматизатор обновлений (CD)
+  # ---------------------------------------------------
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
     volumes:
-      - ./src:/app/src
-    command: [ "python", "-m", "src.bot.bot" ]
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 👇 Это нужно, чтобы Watchtower мог авторизоваться в приватном GitHub Registry
+      # Предполагается, что ты сделал `docker login` под root пользователем
+      - /root/.docker/config.json:/config.json
+    # Проверять обновления каждые 30 сек, удалять старые образы, обновлять даже если были ошибки
+    command: --interval 30 --cleanup --include-restarting
 
 volumes:
   postgres_data:
