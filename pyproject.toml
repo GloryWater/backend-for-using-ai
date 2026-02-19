@@ -12,6 +12,7 @@ dependencies = [
     "asyncpg>=0.29.0",
     "fastapi>=0.110.0",
     "langchain-community>=0.3.21",
+    "mypy>=1.19.1",
     "numpy<2.0",
     "openai>=1.40.0",
     "pre-commit>=4.5.1",
@@ -31,4 +32,9 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.15.1",
+    "types-aiofiles>=25.1.0.20251011",
 ]
+
+[[tool.mypy.overrides]]
+module = "aiofiles.*"
+ignore_missing_imports = true
