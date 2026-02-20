@@ -1,32 +1,92 @@
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
+from enum import Enum
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database.models import CryptocloudPayments, License, User
 
+logger = logging.getLogger(__name__)
 
-async def validate_license(db: AsyncSession, key: str, hwid: str) -> tuple[bool, str]:
-    stmt = select(License).where(License.key == key)
-    result = await db.execute(stmt)
-    license_obj = result.scalar_one_or_none()
 
-    if not license_obj:
-        return False, "Ключ не найден"
-    if not license_obj.is_active:
-        return False, "Ключ заблокирован"
-    if license_obj.expires_at < datetime.now(timezone.utc):
-        return False, "Срок действия подписки истек"
+class LicenseStatus(str, Enum):
+    VALID = "valid"
+    NOT_FOUND = "not_found"
+    INACTIVE = "inactive"
+    EXPIRED = "expired"
+    HWID_MISMATCH = "hwid_mismatch"
 
-    # === LOGIC: HWID LOCK ===
-    if license_obj.hwid is None:
-        license_obj.hwid = hwid
-        await db.commit()
-    elif license_obj.hwid != hwid:
-        return False, "HWID не совпадает (Привязка к другому ПК)"
 
-    return True, "OK"
+async def validate_license(
+    db: AsyncSession, key: str, hwid: str
+) -> tuple[bool, str, LicenseStatus]:
+    """
+    Валидация лицензии с детальной информацией о статусе.
+
+    Returns:
+        tuple: (is_valid, message, status_enum)
+    """
+    try:
+        stmt = select(License).where(License.key == key)
+        result = await db.execute(stmt)
+        license_obj = result.scalar_one_or_none()
+
+        if not license_obj:
+            logger.warning(
+                "License not found: key=%s***", key[-4:] if len(key) > 4 else key
+            )
+            return False, "Ключ не найден", LicenseStatus.NOT_FOUND
+
+        if not license_obj.is_active:
+            logger.warning(
+                "License is inactive: key=%s***", key[-4:] if len(key) > 4 else key
+            )
+            return False, "Ключ заблокирован", LicenseStatus.INACTIVE
+
+        now = datetime.now(timezone.utc)
+        expires_at = license_obj.expires_at
+        # Приводим к timezone-aware если нужно
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+        if expires_at < now:
+            logger.warning(
+                "License expired: key=%s***, expired_at=%s",
+                key[-4:] if len(key) > 4 else key,
+                license_obj.expires_at,
+            )
+            return False, "Срок действия подписки истек", LicenseStatus.EXPIRED
+
+        # === LOGIC: HWID LOCK ===
+        if license_obj.hwid is None:
+            license_obj.hwid = hwid
+            await db.commit()
+            logger.info(
+                "License activated: key=%s***, hwid=%s",
+                key[-4:] if len(key) > 4 else key,
+                hwid[:8],
+            )
+        elif license_obj.hwid != hwid:
+            logger.warning(
+                "HWID mismatch: key=%s***, expected=%s***, got=%s***",
+                key[-4:] if len(key) > 4 else key,
+                license_obj.hwid[:8],
+                hwid[:8],
+            )
+            return (
+                False,
+                "HWID не совпадает (Привязка к другому ПК)",
+                LicenseStatus.HWID_MISMATCH,
+            )
+
+        return True, "OK", LicenseStatus.VALID
+
+    except SQLAlchemyError as e:
+        logger.exception("Database error during license validation: %s", e)
+        return False, "Ошибка базы данных", LicenseStatus.NOT_FOUND
 
 
 async def get_or_create_user(
@@ -35,18 +95,26 @@ async def get_or_create_user(
     """
     Возвращает True, если пользователь уже был, False если новый.
     """
-    stmt = select(User).where(User.telegram_id == telegram_id)
-    result = await db.execute(stmt)
-    user = result.scalar_one_or_none()
+    try:
+        stmt = select(User).where(User.telegram_id == telegram_id)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
 
-    if user:
-        return True  # Уже был
+        if user:
+            return True  # Уже был
 
-    # Создаем нового
-    user = User(telegram_id=telegram_id, username=username)
-    db.add(user)
-    await db.commit()
-    return False  # Новый
+        # Создаем нового
+        user = User(telegram_id=telegram_id, username=username)
+        db.add(user)
+        await db.commit()
+        logger.info(
+            "New user registered: telegram_id=%d, username=%s", telegram_id, username
+        )
+        return False  # Новый
+
+    except SQLAlchemyError as e:
+        logger.exception("Database error during user creation: %s", e)
+        raise
 
 
 async def get_user_license(db: AsyncSession, owner_id: int) -> License | None:
@@ -67,39 +135,63 @@ async def reset_hwid(db: AsyncSession, telegram_id: int) -> bool:
 
 async def add_license(db: AsyncSession, owner_id: int, days: int = 30) -> str:
     """Создает или продлевает лицензию пользователя."""
-    stmt = select(License).where(License.owner_id == owner_id)
-    result = await db.execute(stmt)
-    existing_license = result.scalar_one_or_none()
+    try:
+        stmt = select(License).where(License.owner_id == owner_id)
+        result = await db.execute(stmt)
+        existing_license = result.scalar_one_or_none()
 
-    # Текущее время в UTC
-    now = datetime.now(timezone.utc)
-    # Период продления
-    duration = timedelta(days=days)
+        now = datetime.now(timezone.utc)
+        duration = timedelta(days=days)
 
-    if existing_license:
-        # Если лицензия существует, проверяем, активна ли она по времени
-        if existing_license.expires_at > now:
-            # Сценарий: Подписка еще действует -> добавляем дни к текущему сроку
-            existing_license.expires_at += duration
+        if existing_license:
+            # Приводим expires_at к timezone-aware если нужно
+            existing_expires = existing_license.expires_at
+            if existing_expires.tzinfo is None:
+                existing_expires = existing_expires.replace(tzinfo=timezone.utc)
+
+            if existing_expires > now:
+                existing_license.expires_at = existing_expires + duration
+                logger.info(
+                    "License extended: owner_id=%d, new_expires=%s, added_days=%d",
+                    owner_id,
+                    existing_license.expires_at,
+                    days,
+                )
+            else:
+                existing_license.expires_at = now + duration
+                logger.info(
+                    "License reactivated: owner_id=%d, new_expires=%s",
+                    owner_id,
+                    existing_license.expires_at,
+                )
+
+            existing_license.is_active = True
+            existing_license.hwid = None
+            key = existing_license.key
         else:
-            # Сценарий: Подписка истекла -> считаем срок от текущего момента
-            existing_license.expires_at = now + duration
+            key = secrets.token_hex(16)
+            new_expires = now + duration
 
-        existing_license.is_active = True
-        existing_license.hwid = None  # Сброс HWID при продлении
-        key = existing_license.key
-    else:
-        # Создаем новую лицензию
-        key = secrets.token_hex(16)
-        new_expires = now + duration
+            new_license = License(
+                key=key,
+                expires_at=new_expires,
+                is_active=True,
+                owner_id=owner_id,
+            )
+            db.add(new_license)
+            logger.info(
+                "New license created: owner_id=%d, key=%s***, expires=%s",
+                owner_id,
+                key[-4:],
+                new_expires,
+            )
 
-        new_license = License(
-            key=key, expires_at=new_expires, is_active=True, owner_id=owner_id
-        )
-        db.add(new_license)
+        await db.commit()
+        return key
 
-    await db.commit()
-    return key
+    except SQLAlchemyError as e:
+        logger.exception("Database error during license creation: %s", e)
+        raise
 
 
 async def activate_trial_period(db: AsyncSession, telegram_id: int) -> str | None:

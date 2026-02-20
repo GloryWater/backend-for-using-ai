@@ -54,4 +54,4 @@ class Settings(BaseSettings):
     LOADER_VERSION_FILE: str = "loader_version.json"
 
 
-settings = Settings()
+settings: Settings = Settings()  # type: ignore[call-arg]

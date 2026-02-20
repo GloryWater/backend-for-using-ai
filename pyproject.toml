@@ -1,7 +1,7 @@
 [project]
-name = "groqbackend"
-version = "0.1.0"
-description = "Add your description here"
+name = "admanager"
+version = "0.2.0"
+description = "AI-powered ad text editing service with RAG and license management"
 readme = "README.md"
 requires-python = ">=3.11"
 
@@ -27,6 +27,7 @@ dependencies = [
     "sqlalchemy>=2.0.30",
     "types-aiofiles>=25.1.0.20251011",
     "uvicorn>=0.30.0",
+    "aiosqlite>=0.19.0",
 ]
 
 [dependency-groups]
@@ -39,6 +40,11 @@ dev = [
 [[tool.mypy.overrides]]
 module = "aiofiles.*"
 ignore_missing_imports = true
+
+# Игнорируем ошибки типов в bot.py (aiogram v3 имеет сложные union типы)
+[[tool.mypy.overrides]]
+module = "src.bot.*"
+disable_error_code = ["union-attr", "arg-type"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
