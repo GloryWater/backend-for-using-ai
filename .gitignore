@@ -219,3 +219,6 @@ admin.py
 test.py
 *.lua
 *.luac
+
+# Test files (created by pytest)
+protected/scriptV2.lua

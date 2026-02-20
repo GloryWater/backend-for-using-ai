@@ -19,6 +19,7 @@
 """
 
 import os
+from pathlib import Path
 
 import pytest
 from sqlalchemy.ext.asyncio import (
@@ -41,10 +42,30 @@ os.environ["CRYPTOCLOUD_API_KEY"] = "fake_crypto_key"
 os.environ["QDRANT_URL"] = "http://localhost:6333"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def setup_test_files():
+    """Создаёт тестовые файлы (скрипт, version) для тестов."""
+    # Создаём директорию protected если нет
+    protected_dir = Path("protected")
+    protected_dir.mkdir(exist_ok=True)
+
+    # Создаём фиктивный Lua скрипт
+    script_file = protected_dir / "scriptV2.lua"
+    if not script_file.exists():
+        script_file.write_text("-- Test script\nprint('Hello from test script')")
+
+    # Создаём loader_version.json если нет
+    version_file = Path("loader_version.json")
+    if not version_file.exists():
+        version_file.write_text('{"version": "0.1", "url": "http://test/loader.lua"}')
+
+    yield
+
+
 def pytest_collection_modifyitems(config, items):
     """Пропускает load тесты если не указан флаг --load."""
-    # Проверяем, указан ли флаг --load
-    if config.option.load:
+    # Проверяем, указан ли флаг --load (используем getattr для безопасности)
+    if getattr(config.option, "load", False):
         return
 
     # Проверяем, не запрошен ли конкретный маркер через -m
