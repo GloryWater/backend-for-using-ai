@@ -7,6 +7,7 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from unittest.mock import AsyncMock, MagicMock
 
 from src.database.db import Base, get_db
 from src.database.models import License, User
@@ -46,12 +47,26 @@ async def db_session(db_engine):
 
 @pytest.fixture
 def test_client(db_session):
-    """Создаёт тестовый клиент с переопределённой зависимостью БД."""
+    """Создаёт тестовый клиент с переопределённой зависимостью БД и моками сервисов."""
 
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
+
+    # Мокаем AI сервис для тестов
+    mock_ai_service = MagicMock()
+    mock_ai_service.edit_text = AsyncMock(return_value="Edited text")
+    app.state.ai_service = mock_ai_service
+
+    # Мокаем notification сервис
+    mock_notification_service = MagicMock()
+    app.state.notification_service = mock_notification_service
+
+    # Мокаем vector store
+    mock_vector_store = MagicMock()
+    mock_vector_store.search = AsyncMock(return_value=[])
+    app.state.vector_store = mock_vector_store
 
     transport = ASGITransport(app=app)
     client = AsyncClient(transport=transport, base_url="http://test")
@@ -59,6 +74,13 @@ def test_client(db_session):
     yield client
 
     app.dependency_overrides.clear()
+    # Очищаем моки
+    if hasattr(app.state, "ai_service"):
+        delattr(app.state, "ai_service")
+    if hasattr(app.state, "notification_service"):
+        delattr(app.state, "notification_service")
+    if hasattr(app.state, "vector_store"):
+        delattr(app.state, "vector_store")
 
 
 @pytest.fixture
@@ -135,6 +157,12 @@ async def test_health_detailed(test_client):
 @pytest.mark.asyncio
 async def test_health_ready(test_client):
     """Тест readiness probe."""
+    from src.routes.health import _startup_time, set_startup_time
+
+    # Устанавливаем время запуска если не установлено
+    if not _startup_time:
+        set_startup_time()
+
     response = await test_client.get("/health/ready")
     assert response.status_code == 200
     assert response.json()["status"] == "ready"
@@ -236,16 +264,9 @@ async def test_auth_hwid_lock(test_client, active_license, db_session):
 
 
 @pytest.mark.asyncio
-async def test_edit_success(test_client, active_license, monkeypatch):
+async def test_edit_success(test_client, active_license):
     """Тест успешного редактирования текста."""
-
-    # Мокаем AI сервис
-    async def mock_edit_text(text):
-        return f"Edited: {text}"
-
-    from src.services.ai_service import AIService
-
-    monkeypatch.setattr(AIService, "edit_text", mock_edit_text)
+    # AI сервис уже замокан в test_client фикстуре
 
     response = await test_client.post(
         "/edit",
@@ -259,6 +280,7 @@ async def test_edit_success(test_client, active_license, monkeypatch):
 
     data = response.json()
     assert "result" in data
+    assert "Edited" in data["result"]
 
 
 @pytest.mark.asyncio
@@ -276,15 +298,14 @@ async def test_edit_invalid_license(test_client):
 
 
 @pytest.mark.asyncio
-async def test_edit_empty_text(test_client, active_license, monkeypatch):
+async def test_edit_empty_text(test_client, active_license):
     """Тест редактирования пустого текста."""
+    # Мокаем пустой ответ
+    from src.main import app
 
-    async def mock_edit_text(text):
-        return "ОТКАЗ: Пустой запрос или некорректный текст"
-
-    from src.services.ai_service import AIService
-
-    monkeypatch.setattr(AIService, "edit_text", mock_edit_text)
+    app.state.ai_service.edit_text = AsyncMock(
+        return_value="ОТКАЗ: Пустой запрос или некорректный текст"
+    )
 
     response = await test_client.post(
         "/edit",

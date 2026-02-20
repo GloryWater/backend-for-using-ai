@@ -46,7 +46,23 @@ ignore_missing_imports = true
 module = "src.bot.*"
 disable_error_code = ["union-attr", "arg-type"]
 
+# Игнорируем ошибки типов в alembic (проблемы с заглушками типов)
+[[tool.mypy.overrides]]
+module = "alembic.*"
+disable_error_code = ["attr-defined", "index"]
+
 [tool.pytest.ini_options]
-pythonpath = "."
+pythonpath = ["."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+# Маркеры для тестов
+markers = [
+    "load: mark test as load test (requires --load flag)",
+    "stress: mark test as stress test",
+    "soak: mark test as soak test",
+    "spike: mark test as spike test",
+    "chaos: mark test as chaos test",
+    "slow: mark test as slow running",
+]

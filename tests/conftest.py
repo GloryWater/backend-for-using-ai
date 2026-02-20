@@ -1,10 +1,24 @@
 """
 Конфигурация pytest и общие фикстуры.
+
+Запуск тестов:
+    # Быстрые unit тесты (по умолчанию)
+    pytest tests/ -v
+
+    # Load тесты (требуют запущенного сервера)
+    pytest tests/load/ -v --load
+
+    # Load тесты в полном режиме (длительные)
+    pytest tests/load/ -v --load --full-mode
+
+    # Все тесты кроме load
+    pytest tests/ -v -m "not load"
+
+    # Конкретный тип тестов
+    pytest tests/load/ -v --load -m stress
 """
 
-import asyncio
 import os
-from typing import Generator
 
 import pytest
 from sqlalchemy.ext.asyncio import (
@@ -27,12 +41,24 @@ os.environ["CRYPTOCLOUD_API_KEY"] = "fake_crypto_key"
 os.environ["QDRANT_URL"] = "http://localhost:6333"
 
 
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Создаёт event loop для сессии тестов."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
+def pytest_collection_modifyitems(config, items):
+    """Пропускает load тесты если не указан флаг --load."""
+    # Проверяем, указан ли флаг --load
+    if config.option.load:
+        return
+
+    # Проверяем, не запрошен ли конкретный маркер через -m
+    markexpr = str(getattr(config.option, "markexpr", "") or "")
+    load_markers = ["load", "stress", "soak", "spike", "chaos"]
+    if any(marker in markexpr for marker in load_markers):
+        # Маркер указан явно, разрешаем запуск
+        return
+
+    # Пропускаем load тесты если флаг --load не указан
+    skip_load = pytest.mark.skip(reason="Need --load flag to run load tests")
+    for item in items:
+        if any(marker.name in load_markers for marker in item.iter_markers()):
+            item.add_marker(skip_load)
 
 
 @pytest.fixture

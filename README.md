@@ -463,16 +463,72 @@ alembic downgrade -1
 
 ### Тестирование
 
+Проект использует **pytest** для тестирования. Тесты разделены на две категории:
+
+#### Быстрые тесты (Unit/Integration)
+
+Запускаются **по умолчанию** без необходимости в запущенном сервере:
+
 ```bash
-# Запуск всех тестов
+# Все быстрые тесты
 pytest
 
-# Запуск с покрытием
+# С подробным выводом
+pytest -v
+
+# С покрытием кода
 pytest --cov=src
 
-# Запуск конкретного теста
-pytest tests/test_auth.py -v
+# Конкретный файл тестов
+pytest tests/test_api.py -v
+pytest tests/test_crud.py -v
+pytest tests/test_crypto.py -v
+pytest tests/test_rate_limit.py -v
 ```
+
+#### Load/Stress тесты
+
+Требуют **запущенного сервера** и флага `--load`:
+
+```bash
+# Быстрые load тесты (10-30 сек каждый)
+pytest tests/load/ -v --load
+
+# Полные load тесты (60-300 сек каждый)
+pytest tests/load/ -v --load --full-mode
+
+# Конкретный тип тестов
+pytest tests/load/ -v --load -m stress
+pytest tests/load/ -v --load -m soak
+pytest tests/load/ -v --load -m spike
+pytest tests/load/ -v --load -m chaos
+
+# С кастомными параметрами
+pytest tests/load/ -v --load --concurrent-users=50 --test-duration=60
+
+# С генерацией HTML отчёта
+pytest tests/load/ -v --load --generate-report
+```
+
+#### Конфигурация load тестов
+
+| Параметр | По умолчанию | Полный режим | Описание |
+|----------|--------------|--------------|----------|
+| `--concurrent-users` | 5 | 10 | Количество одновременных пользователей |
+| `--test-duration` | 10 сек | 60 сек | Длительность теста |
+| `--spike-users` | 20 | 100 | Пользователей для spike тестов |
+| `--soak-duration` | 30 сек | 300 сек | Длительность soak тестов |
+| `--timeout-seconds` | 10 сек | 30 сек | Таймаут запроса |
+
+#### Маркеры тестов
+
+- `load` — нагрузочные тесты
+- `stress` — стресс-тесты (предельная нагрузка)
+- `soak` — тесты стабильности (длительная работа)
+- `spike` — тесты резких скачков нагрузки
+- `chaos` — chaos engineering (сбои и отказы)
+
+> **Важно:** Load тесты пропускаются по умолчанию. Используйте флаг `--load` для их запуска.
 
 ---
 
