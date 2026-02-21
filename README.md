@@ -1,660 +1,442 @@
-# 🤖 AdManager — AI-сервис для редактирования рекламных объявлений
+<!-- filepath: README.md -->
 
-[![Python 3.11](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![FastAPI 0.110](https://img.shields.io/badge/FastAPI-0.110-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Aiogram 3.x](https://img.shields.io/badge/Aiogram-3.x-2CA5E0?logo=telegram&logoColor=white)](https://docs.aiogram.dev/)
-[![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Qdrant](https://img.shields.io/badge/Vector_DB-Qdrant-D32F2F?logo=qdrant&logoColor=white)](https://qdrant.tech/)
-[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
-[![CI](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml)
+# AdManager — AI-Powered Ad Text Editing Service
 
-Сервис автоматического редактирования рекламных объявлений с использованием LLM и RAG-системы. Включает Telegram-бота для управления подписками, приёма платежей и системы лицензирования с привязкой к HWID.
+<div align="center">
 
----
+![AdManager Logo](https://via.placeholder.com/200x200?text=AdManager)
 
-## 📋 Содержание
+**AI-сервис для автоматического редактирования рекламных объявлений**
 
-- [Возможности](#-возможности)
-- [Архитектура](#-архитектура)
-- [Технологический стек](#-технологический-стек)
-- [Быстрый старт](#-быстрый-старт)
-- [Конфигурация](#-конфигурация)
-- [API Reference](#-api-reference)
-- [Структура проекта](#-структура-проекта)
-- [Разработка](#-разработка)
-- [Платежные системы](#-платежные-системы)
-- [Безопасность](#-безопасность)
-- [Лицензия](#-лицензия)
+[![Python Version](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com/)
+[![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+[![CI](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Docker](https://img.shields.io/badge/docker-compose-ready-blue.svg)](docker-compose.yaml)
+
+</div>
 
 ---
 
-## ✨ Возможности
+## 📋 Table of Contents
 
-### Основной функционал
-- 🤖 **AI-редактирование текстов** — использование LLM (OpenAI-совместимый API) для улучшения рекламных объявлений
-- 🔍 **RAG-система** — Retrieval-Augmented Generation для контекстного редактирования на основе обучающих примеров
-- 🎯 **Векторный поиск** — семантический поиск похожих примеров через Qdrant (Sentence Transformers)
-- 🔐 **Система лицензирования** — генерация и валидация лицензий с привязкой к HWID
-- 📱 **Telegram-бот** — управление подписками, пробными периодами и оплатами
-
-### Монетизация
-- ⭐ **Telegram Stars** — встроенная оплата через Telegram
-- 💎 **Криптовалюта** — CryptoCloud/Cryptomus для приёма криптовалютных платежей
-- 💳 **Банковские карты** — Tribute для обработки карточных платежей
-- 🎁 **Пробный период** — 7 дней бесплатного использования
-
-### Безопасность
-- 🔒 **XOR-шифрование** — защита Lua-скриптов
-- 🔑 **HMAC-верификация** — проверка подписи вебхуков
-- 🖥️ **HWID Lock** — привязка лицензии к устройству
-- ⏰ **Срок действия** — управление активацией лицензий
+- [Features](#-features)
+- [Architecture](#-architecture)
+- [Quickstart](#-quickstart)
+- [Environment Variables](#-environment-variables)
+- [API Endpoints](#-api-endpoints)
+- [Development](#-development)
+- [Testing](#-testing)
+- [License](#-license)
 
 ---
 
-## 🏗️ Архитектура
+## ✨ Features
+
+### Core Functionality
+
+- **🤖 AI Text Editing** — Автоматическое редактирование рекламных текстов с использованием LLM (GPT-4o-mini) и RAG-системы
+- **📚 Vector Search** — Поиск похожих объявлений в базе знаний (Qdrant, 6494+ примеров)
+- **🔐 License Management** — Система лицензирования с HWID-привязкой и пробным периодом (7 дней)
+- **💳 Multiple Payment Methods** — Telegram Stars, CryptoCloud (криптовалюта), Tribute (банковские карты)
+- **🤖 Telegram Bot** — Удобное взаимодействие с пользователями через @bot
+- **⚡ Rate Limiting** — Защита от злоупотреблений с настраиваемыми лимитами
+
+### Technical Features
+
+- **🚀 High Performance** — Async FastAPI backend с uvicorn
+- **🗄️ PostgreSQL + AsyncPG** — Асинхронная работа с базой данных
+- **🎯 Qdrant Vector DB** — Быстрый семантический поиск (paraphrase-multilingual-MiniLM-L12-v2)
+- **🔄 Auto-Updates** — Watchtower для автоматического обновления контейнеров
+- **🧪 Comprehensive Testing** — Unit, integration, load, stress, soak, spike, chaos тесты
+- **📊 Health Checks** — Kubernetes-ready endpoints для мониторинга
+
+---
+
+## 🏗 Architecture
+
+### System Components
 
 ```
 ┌─────────────────┐
-│  Telegram Bot   │
-│   (aiogram 3)   │
+│  Telegram Bot   │ (aiogram 3.x)
+│  (контейнер)    │
 └────────┬────────┘
          │
          ↓
 ┌─────────────────────────────────────────┐
 │          FastAPI Backend                │
 │  ┌───────────────────────────────────┐  │
-│  │       AIService (LLM + RAG)       │  │
-│  │  ┌─────────────────────────────┐  │  │
-│  │  │   VectorStore (Qdrant)      │  │  │
-│  │  │   Sentence Transformers     │  │  │
-│  │  └─────────────────────────────┘  │  │
+│  │  AIService (LLM + RAG)            │  │
+│  │  • OpenAI-совместимый API         │  │
+│  │  • Sentence Transformers          │  │
+│  │  • Qdrant (векторная БД)          │  │
 │  └───────────────────────────────────┘  │
 │  ┌───────────────────────────────────┐  │
-│  │   Payment Services                │  │
-│  │   • CryptoCloud                   │  │
-│  │   • Tribute                       │  │
-│  │   • Telegram Stars                │  │
+│  │  Payment Services                 │  │
+│  │  • CryptoCloud                    │  │
+│  │  • Tribute                        │  │
+│  │  • Telegram Stars                 │  │
+│  └───────────────────────────────────┘  │
+│  ┌───────────────────────────────────┐  │
+│  │  Rate Limit Middleware            │  │
 │  └───────────────────────────────────┘  │
 └──────────────────┬──────────────────────┘
                    │
                    ↓
     ┌──────────────────────────┐
-    │   PostgreSQL 15          │
-    │  • Users                 │
-    │  • Licenses              │
-    │  • Payments              │
+    │   PostgreSQL 15          │ (основная БД)
+    │   • Users                │
+    │   • Licenses             │
+    │   • Payments             │
+    └──────────────────────────┘
+    ┌──────────────────────────┐
+    │   Qdrant                 │ (векторная БД)
+    │   • Embeddings           │
+    │   • Similarity Search    │
     └──────────────────────────┘
 ```
 
+### Data Flow (AI Editing)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Auth
+    participant RAG
+    participant LLM
+    participant Cache
+
+    Client->>API: POST /edit {key, hwid, text}
+    API->>Auth: Проверка лицензии
+    Auth-->>API: Лицензия активна ✓
+    
+    alt Кэш содержит результат
+        Cache-->>API: Возврат из кэша
+    else Кэш пуст
+        API->>RAG: Поиск похожих примеров
+        RAG->>Qdrant: Vector search (top_k=10)
+        Qdrant-->>RAG: Примеры (threshold=0.5)
+        RAG-->>API: Контекст + правила
+        
+        API->>LLM: Генерация текста
+        LLM-->>API: Edited text
+        API->>Cache: Сохранение результата (TTL=1h)
+    end
+    
+    API-->>Client: {result: "edited text"}
+```
+
+### Tech Stack
+
+| Component | Technology | Version |
+|-----------|------------|---------|
+| **Backend Framework** | FastAPI | 0.110+ |
+| **ORM** | SQLAlchemy | 2.0+ |
+| **Database** | PostgreSQL | 15 |
+| **Vector DB** | Qdrant | latest |
+| **LLM Client** | OpenAI API | 1.40+ |
+| **Embeddings** | Sentence Transformers | 3.0+ |
+| **Telegram Bot** | aiogram | 3.10+ |
+| **Containerization** | Docker Compose | v2+ |
+| **CI/CD** | GitHub Actions | latest |
+
 ---
 
-## 🛠️ Технологический стек
+## 🚀 Quickstart
 
-### Backend
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| **FastAPI** | 0.110+ | Async веб-фреймворк |
-| **SQLAlchemy** | 2.0+ | ORM с async/await |
-| **Alembic** | 1.18+ | Миграции БД |
-| **Pydantic** | 2.8+ | Валидация данных |
-| **AsyncPG** | 0.29+ | PostgreSQL драйвер |
+### Prerequisites
 
-### AI/ML
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| **OpenAI API** | 1.40+ | LLM для генерации |
-| **Sentence Transformers** | 3.0+ | Эмбеддинги |
-| **Qdrant** | 1.12+ | Векторная БД |
-| **LangChain Community** | 0.3+ | RAG инструменты |
-| **NumPy** | <2.0 | Математические операции |
+- Python 3.11+
+- Docker & Docker Compose
+- uv (Python package manager)
 
-### Infrastructure
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| **PostgreSQL** | 15 | Основная БД |
-| **Docker Compose** | — | Оркестрация |
-| **Uvicorn** | 0.30+ | ASGI сервер |
-| **aiogram** | 3.10+ | Telegram Bot |
+### Option 1: Docker Compose (Recommended)
 
-### DevOps & Tools
-| Технология | Версия | Назначение |
-|------------|--------|------------|
-| **GitHub Actions** | — | CI/CD |
-| **Ruff** | 0.15+ | Линтинг |
-| **Mypy** | 1.19+ | Статическая типизация |
-| **Pytest** | 9.0+ | Тестирование |
-| **Pre-commit** | 4.5+ | Хуки Git |
-
----
-
-## 🚀 Быстрый старт
-
-### Предварительные требования
-
-- Docker и Docker Compose
-- Python 3.11+ (для локальной разработки)
-- Telegram Bot Token (от [@BotFather](https://t.me/botfather))
-- API ключ для LLM (OpenAI-совместимый)
-
-### Установка
-
-1. **Клонируйте репозиторий**
 ```bash
+# 1. Clone the repository
 git clone https://github.com/GloryWater/backend-for-using-ai.git
 cd backend-for-using-ai
-```
 
-2. **Создайте файл окружения**
-```bash
-cp .env.example .env  # или создайте .env вручную
-```
+# 2. Create .env file (see Environment Variables section)
+cp .env.example .env
 
-3. **Настройте переменные окружения** (см. [Конфигурация](#-конфигурация))
-
-4. **Запустите все сервисы**
-```bash
+# 3. Start all services
 docker-compose up -d
+
+# 4. Check logs
+docker-compose logs -f
+
+# 5. Access API docs
+# http://localhost:8000/docs
 ```
 
-5. **Проверьте статус контейнеров**
+### Option 2: Local Development
+
 ```bash
-docker-compose ps
+# 1. Install uv (if not installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Clone and setup
+git clone https://github.com/GloryWater/backend-for-using-ai.git
+cd backend-for-using-ai
+uv sync
+
+# 3. Start PostgreSQL and Qdrant (Docker)
+docker-compose up -d db qdrant
+
+# 4. Run database migrations
+alembic upgrade head
+
+# 5. Start the backend
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# 6. Start the bot (separate terminal)
+uv run python -m src.bot.bot
 ```
 
-6. **Примените миграции БД**
+### Verify Installation
+
 ```bash
-docker-compose exec backend alembic upgrade head
+# Health check
+curl http://localhost:8000/health
+
+# Detailed health check
+curl http://localhost:8000/health/detailed
+
+# Check loader version
+curl http://localhost:8000/loader/version
 ```
-
-### Проверка работы
-
-Сервисы доступны по адресам:
-- **API**: http://localhost:8000
-- **API Docs (Swagger)**: http://localhost:8000/docs
-- **Qdrant Dashboard**: http://localhost:6333/dashboard
-- **PostgreSQL**: localhost:5432 (только изнутри сети)
 
 ---
 
-## ⚙️ Конфигурация
+## 🔧 Environment Variables
 
-### Основные переменные окружения
-
-Создайте файл `.env` в корне проекта:
+Create a `.env` file in the project root:
 
 ```bash
-# ─── Database ──────────────────────────────────────────
+# =============================================================================
+# DATABASE (PostgreSQL)
+# =============================================================================
 DB_USER=postgres
 DB_PASS=your_secure_password_here
 DB_NAME=admanager
 DB_HOST=db
 DB_PORT=5432
 
-# ─── LLM Configuration ─────────────────────────────────
+# =============================================================================
+# LLM (OpenAI-compatible API)
+# =============================================================================
 LLM_API_KEY=your_llm_api_key_here
 LLM_BASE_URL=https://api.openai.com/v1
 LLM_MODEL=gpt-4o-mini
-LLM_TEMPERATURE=0.3
-LLM_MAX_TOKENS=200
+LLM_TEMPERATURE=0.7
+LLM_MAX_TOKENS=500
 
-# ─── Telegram Bot ──────────────────────────────────────
-BOT_TOKEN=your_telegram_bot_token_here
+# =============================================================================
+# TELEGRAM BOT
+# =============================================================================
+BOT_TOKEN=your_bot_token_from_botfather
 
-# ─── Payment Systems ───────────────────────────────────
-CRYPTOCLOUD_API_KEY=
-CRYPTOCLOUD_SHOP_ID=
-CRYPTOCLOUD_SECRET=
+# =============================================================================
+# PAYMENT SYSTEMS
+# =============================================================================
+# CryptoCloud
+CRYPTOCLOUD_API_KEY=your_crypto_api_key
+CRYPTOCLOUD_SHOP_ID=your_shop_id
+CRYPTOCLOUD_SECRET=your_crypto_secret
 
-TRIBUTE_API_KEY=your_tribute_api_key
+# Tribute (bank cards)
+TRIBUTE_API_KEY=your_tribute_key
 
-# ─── ML / Vector DB ────────────────────────────────────
+# =============================================================================
+# VECTOR DATABASE (Qdrant)
+# =============================================================================
 QDRANT_URL=http://qdrant:6333
-QDRANT_COLLECTION=examples_collection
-ML_MODEL_NAME=paraphrase-multilingual-MiniLM-L12-v2
+QDRANT_COLLECTION=ad_examples
+ML_MODEL_NAME=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
 SIMILARITY_THRESHOLD=0.5
 TOP_K_EXAMPLES=10
 
-# ─── Files & Paths ─────────────────────────────────────
+# =============================================================================
+# FILE PATHS
+# =============================================================================
 RULES_FILE=src/AI/rules.xml
 EXAMPLES_FILE=src/AI/data.jsonl
 SCRIPT_PATH=protected/scriptV2.lua
 LOADER_VERSION_FILE=loader_version.json
 ```
 
-### Формат обучающих данных (`data.jsonl`)
-
-Каждая строка — JSON-объект с диалогом для обучения:
-
-```jsonl
-{"messages": [{"role": "user", "content": "реклама ломбарда 329 330"}, {"role": "model", "content": "Работают ломбарды на 329 и 330 авеню. Лучшие цены в штате. Отправил:"}]}
-{"messages": [{"role": "user", "content": "куплю ламборгини хуракан 2022"}, {"role": "model", "content": "Куплю а/м марки \"Ламборгини Хуракан 2022\". Бюджет: Свободный."}]}
-```
-
-### Формат правил редактирования (`rules.xml`)
-
-```xml
-<rules>
-  <rule>Убирай эмодзи из текста</rule>
-  <rule>Исправляй орфографические ошибки</rule>
-  <rule>Сокращай текст до 100 символов</rule>
-  <rule>Стандартизируй форматы цен (650кк → 650 млн)</rule>
-  <rule>Используй аббревиатуры: а/м (автомобиль), о/п (одежда/пошив), р/с (ресурс/сертификат)</rule>
-</rules>
-```
-
 ---
 
-## 📡 API Reference
+## 📡 API Endpoints
 
-### Authentication
+### Authentication & License
 
-**POST** `/auth`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth` | Аутентификация лицензии, получение скрипта |
+| `GET` | `/loader/version` | Проверка версии загрузчика |
 
-Аутентификация лицензии и получение зашифрованного скрипта.
+**Example: POST /auth**
 
-```http
-POST /auth
-Content-Type: application/json
-
-{
-  "key": "license_key_123",
-  "hwid": "hardware_id_abc"
-}
+```bash
+curl -X POST http://localhost:8000/auth \
+  -H "Content-Type: application/json" \
+  -d '{"key": "abc123...", "hwid": "device-id-here"}'
 ```
 
-**Response 200:**
+**Response:**
 ```json
 {
   "status": "success",
-  "script_bytes": "base64_encoded_encrypted_script"
+  "script_bytes": "base64_encoded_encrypted_lua_script"
 }
 ```
-
-**Response 403:**
-```json
-{
-  "status": "error",
-  "message": "Invalid license"
-}
-```
-
----
 
 ### AI Text Editing
 
-**POST** `/edit`
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/edit` | Редактирование текста через AI |
 
-Редактирование текста объявления через AI.
+**Example: POST /edit**
 
-```http
-POST /edit
-Content-Type: application/json
-
-{
-  "key": "license_key_123",
-  "hwid": "hardware_id_abc",
-  "text": "продам лавку чубрика 650кк"
-}
+```bash
+curl -X POST http://localhost:8000/edit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "abc123...",
+    "hwid": "device-id-here",
+    "text": "Продам гараж, недорого"
+  }'
 ```
 
-**Response 200:**
+**Response:**
 ```json
 {
-  "result": "Продам а/с \"Лавка Чубрика\". Цена: 650 млн."
+  "result": "🔥 Продам просторный гараж в отличном состоянии! Цена ниже рыночной. Звоните!"
 }
 ```
-
----
-
-### Loader Version
-
-**GET** `/loader/version`
-
-Проверка версии загрузчика.
-
-```http
-GET /loader/version
-```
-
-**Response 200:**
-```json
-{
-  "version": "0.1",
-  "url": "https://glorysyntax.live/static/loader.lua"
-}
-```
-
----
 
 ### Payment Webhooks
 
-**POST** `/callback` — CryptoCloud postback  
-**POST** `/webhook/tribute` — Tribute webhook (требует HMAC-подпись в заголовке `trbt-signature`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/callback` | CryptoCloud postback |
+| `POST` | `/webhook/tribute` | Tribute webhook |
+
+### Health Checks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Basic health check (200 OK) |
+| `GET` | `/health/detailed` | Детальная проверка (БД, латенси) |
+| `GET` | `/health/ready` | Readiness probe (Kubernetes) |
+| `GET` | `/health/live` | Liveness probe (Kubernetes) |
+
+### Rate Limits
+
+| Endpoint | Requests/Window | Block Duration |
+|----------|-----------------|----------------|
+| `/auth` | 10 / 1 min | 15 min |
+| `/edit` | 30 / 1 min | 5 min |
+| `/callback`, `/webhook/*` | 50 / 1 min | 5 min |
+| `/health/*` | Excluded | — |
 
 ---
 
-## 📁 Структура проекта
+## 🛠 Development
 
-```
-admanager/
-├── alembic/                      # Миграции базы данных
-│   ├── env.py
-│   └── versions/                 # Файлы миграций
-│
-├── src/
-│   ├── AI/                       # AI конфигурация
-│   │   ├── rules.xml             # Правила редактирования
-│   │   └── data.jsonl            # Обучающие примеры (6500+ строк)
-│   │
-│   ├── bot/                      # Telegram бот
-│   │   ├── bot.py                # Основная логика
-│   │   └── keyboards.py          # Inline/reply клавиатуры
-│   │
-│   ├── database/                 # Работа с БД
-│   │   ├── models.py             # SQLAlchemy модели (User, License, Payment)
-│   │   ├── crud.py               # CRUD операции
-│   │   └── db.py                 # Подключение к PostgreSQL
-│   │
-│   ├── rag/                      # RAG компоненты
-│   │
-│   ├── routes/                   # API endpoints
-│   │   ├── ai.py                 # /edit — AI редактирование
-│   │   ├── auth.py               # /auth, /loader/version
-│   │   └── payments.py           # Платежные вебхуки
-│   │
-│   ├── services/                 # Бизнес-логика
-│   │   ├── ai_service.py         # AIService (LLM + RAG)
-│   │   ├── vector_store.py       # Qdrant интеграция
-│   │   ├── notification_service.py # Уведомления через бота
-│   │   └── cryptocloud.py        # CryptoCloud API
-│   │
-│   ├── utils/                    # Утилиты
-│   │   ├── crypto.py             # XOR шифрование, HMAC
-│   │   └── text.py               # Очистка текста
-│   │
-│   ├── config.py                 # Pydantic Settings
-│   ├── dependencies.py           # FastAPI Depends
-│   ├── schemas.py                # Pydantic модели
-│   └── main.py                   # Точка входа (lifespan, роутеры)
-│
-├── protected/                    # Защищённые файлы
-│   └── scriptV2.lua              # Lua скрипт для клиентов
-│
-├── static/                       # Статические файлы
-│   └── loader.lua                # Загрузчик
-│
-├── tests/                        # Тесты (pytest)
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml                # CI/CD (тесты + build & push)
-│
-├── docker-compose.yaml           # Оркестрация сервисов
-├── Dockerfile                    # Образ приложения
-├── pyproject.toml                # Зависимости Python (uv)
-├── .pre-commit-config.yaml       # Pre-commit хуки (Ruff, Mypy)
-├── .python-version               # Версия Python (3.11)
-├── alembic.ini                   # Настройки Alembic
-└── README.md                     # Документация
-```
-
----
-
-## 👨‍💻 Разработка
-
-### Локальная разработка
-
-1. **Установите uv** (менеджер пакетов)
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-2. **Склонируйте и настройте окружение**
-```bash
-git clone https://github.com/GloryWater/backend-for-using-ai.git
-cd backend-for-using-ai
-uv sync
-```
-
-3. **Запустите зависимости (Docker)**
-```bash
-docker-compose up -d db qdrant
-```
-
-4. **Запустите backend локально**
-```bash
-uvicorn src.main:app --reload --port 8000
-```
-
-5. **Запустите бота (отдельно)**
-```bash
-python -m src.bot.bot
-```
-
-### Pre-commit хуки
-
-Проект использует pre-commit для автоматического линтинга:
+### Pre-commit Hooks
 
 ```bash
-# Установка хуков
-pre-commit install
+# Install pre-commit hooks
+uv run pre-commit install
 
-# Запуск на всех файлах
-pre-commit run --all-files
+# Run manually
+uv run pre-commit run --all-files
 ```
 
-Хуки включают:
-- **Ruff** — линтинг и форматирование
-- **Mypy** — проверка типов
-
-### Создание миграций
+### Code Quality
 
 ```bash
-# Автогенерация миграции
-alembic revision --autogenerate -m "описание изменений"
+# Linting (Ruff)
+uvx ruff check .
 
-# Применение миграций
+# Formatting (Ruff)
+uvx ruff format .
+
+# Type checking (Mypy)
+uv run mypy src/
+```
+
+### Database Migrations
+
+```bash
+# Create a new migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
 alembic upgrade head
 
-# Откат на одну миграцию
+# Rollback
 alembic downgrade -1
 ```
 
-### Тестирование
+---
 
-Проект использует **pytest** для тестирования. Тесты разделены на две категории:
+## 🧪 Testing
 
-#### Быстрые тесты (Unit/Integration)
-
-Запускаются **по умолчанию** без необходимости в запущенном сервере:
+### Run Tests
 
 ```bash
-# Все быстрые тесты
-pytest
+# Quick tests (unit)
+uv run pytest tests/ -v
 
-# С подробным выводом
-pytest -v
+# With coverage
+uv run pytest --cov=src --cov-report=html
 
-# С покрытием кода
-pytest --cov=src
+# Load tests (requires --load flag)
+uv run pytest tests/load/ -v --load
 
-# Конкретный файл тестов
-pytest tests/test_api.py -v
-pytest tests/test_crud.py -v
-pytest tests/test_crypto.py -v
-pytest tests/test_rate_limit.py -v
+# Full load test suite (stress, soak, spike, chaos)
+uv run pytest tests/load/ -v --load --full-mode
 ```
 
-#### Load/Stress тесты
+### Test Types
 
-Требуют **запущенного сервера** и флага `--load`:
-
-```bash
-# Быстрые load тесты (10-30 сек каждый)
-pytest tests/load/ -v --load
-
-# Полные load тесты (60-300 сек каждый)
-pytest tests/load/ -v --load --full-mode
-
-# Конкретный тип тестов
-pytest tests/load/ -v --load -m stress
-pytest tests/load/ -v --load -m soak
-pytest tests/load/ -v --load -m spike
-pytest tests/load/ -v --load -m chaos
-
-# С кастомными параметрами
-pytest tests/load/ -v --load --concurrent-users=50 --test-duration=60
-
-# С генерацией HTML отчёта
-pytest tests/load/ -v --load --generate-report
-```
-
-#### Конфигурация load тестов
-
-| Параметр | По умолчанию | Полный режим | Описание |
-|----------|--------------|--------------|----------|
-| `--concurrent-users` | 5 | 10 | Количество одновременных пользователей |
-| `--test-duration` | 10 сек | 60 сек | Длительность теста |
-| `--spike-users` | 20 | 100 | Пользователей для spike тестов |
-| `--soak-duration` | 30 сек | 300 сек | Длительность soak тестов |
-| `--timeout-seconds` | 10 сек | 30 сек | Таймаут запроса |
-
-#### Маркеры тестов
-
-- `load` — нагрузочные тесты
-- `stress` — стресс-тесты (предельная нагрузка)
-- `soak` — тесты стабильности (длительная работа)
-- `spike` — тесты резких скачков нагрузки
-- `chaos` — chaos engineering (сбои и отказы)
-
-> **Важно:** Load тесты пропускаются по умолчанию. Используйте флаг `--load` для их запуска.
+| Type | Description | Flag |
+|------|-------------|------|
+| **Unit** | API, CRUD, crypto, rate limiting | — |
+| **Load** | Normal load simulation | `--load` |
+| **Stress** |极限负载测试 | `--load --full-mode` |
+| **Soak** | Long-running (memory leaks) | `--load --full-mode` |
+| **Spike** | Sudden traffic spikes | `--load --full-mode` |
+| **Chaos** | Failure injection | `--load --full-mode` |
 
 ---
 
-## 💳 Платежные системы
+## 📄 License
 
-### Telegram Stars
+This software is **proprietary** and confidential. See the [LICENSE](LICENSE) file for details.
 
-Встроенная платёжная система Telegram:
-
-1. Создайте бота через [@BotFather](https://t.me/botfather)
-2. Активируйте Telegram Stars в настройках бота
-3. Укажите `BOT_TOKEN` в `.env`
-
-### CryptoCloud / Cryptomus
-
-Приём криптовалютных платежей:
-
-1. Зарегистрируйтесь на [CryptoCloud](https://cryptocloud.plus/)
-2. Получите API ключи в личном кабинете
-3. Настройте вебхук на `https://yourdomain.com/callback`
-4. Добавьте в `.env`:
-   ```bash
-   CRYPTOCLOUD_API_KEY=your_key
-   CRYPTOCLOUD_SHOP_ID=your_shop_id
-   CRYPTOCLOUD_SECRET=your_secret
-   ```
-
-### Tribute
-
-Приём платежей банковскими картами:
-
-1. Создайте продукт в [Tribute](https://tribute.app/)
-2. Настройте вебхук на `https://yourdomain.com/webhook/tribute`
-3. Добавьте `TRIBUTE_API_KEY` в `.env`
-4. Вебхуки проверяются через HMAC-подпись (заголовок `trbt-signature`)
+**Unauthorized copying, modification, distribution, or commercial use is strictly prohibited.**
 
 ---
 
-## 🔒 Безопасность
+## 📞 Support
 
-### HWID Lock
-
-Лицензия привязывается к первому устройству при активации. Изменение HWID требует сброса через Telegram-бот.
-
-### XOR Encryption
-
-Lua-скрипты шифруются XOR-алгоритмом с использованием лицензионного ключа перед отправкой клиенту.
-
-### Webhook Verification
-
-Все платёжные вебхуки проверяются через HMAC-SHA256 подписи для предотвращения подделки запросов.
-
-### Database Security
-
-Рекомендации:
-- Используйте сложные пароли для БД
-- Ограничьте доступ к PostgreSQL (только `127.0.0.1`)
-- Регулярно создавайте бэкапы: `docker-compose exec db pg_dump -U postgres admanager > backup.sql`
-
----
-
-## 📊 Мониторинг
-
-### Логи
-
-```bash
-# Все сервисы
-docker-compose logs -f
-
-# Только backend
-docker-compose logs -f backend
-
-# Только бот
-docker-compose logs -f bot
-
-# Последние 100 строк
-docker-compose logs --tail=100 backend
-```
-
-### Проверка здоровья
-
-```bash
-# API (Swagger UI)
-curl http://localhost:8000/docs
-
-# База данных
-docker-compose exec db psql -U postgres -d admanager -c "SELECT COUNT(*) FROM users;"
-
-# Qdrant
-curl http://localhost:6333/api/collections
-```
-
-### Watchtower (автообновление)
-
-В `docker-compose.yaml` настроен Watchtower для автоматического обновления контейнеров:
-- Проверяет обновления каждые 30 секунд
-- Использует GitHub Container Registry (GHCR)
-- Автоматически удаляет старые образы
-
----
-
-## 🤝 Вклад в проект
-
-Этот проект является **проприетарным ПО**. Вклад извне не принимается.
-
-Если вы обнаружили проблему или у вас есть предложение, свяжитесь с владельцем репозитория напрямую.
-
----
-
-## ⚖️ Лицензия
-
-**© 2026 Yauheni Sytsevich. Все права защищены.**
-
-Данное программное обеспечение является **ПРОПРИЕТАРНЫМ**.  
-Несанкционированное копирование, модификация, распространение или обратная разработка данного ПО, на любом носителе, строго запрещены.
-
----
-
-## 📞 Контакты
-
-- **GitHub**: [@GloryWater](https://github.com/GloryWater)
+- **Telegram Bot:** [@your_bot](https://t.me/your_bot)
+- **GitHub Issues:** [Create an issue](https://github.com/GloryWater/backend-for-using-ai/issues)
+- **Email:** support@example.com
 
 ---
 
 <div align="center">
 
-**AdManager** — Умное редактирование рекламных объявлений с помощью AI
+**AdManager v0.2.0** | Built with ❤️ using FastAPI, PostgreSQL, Qdrant, and AI
 
 </div>

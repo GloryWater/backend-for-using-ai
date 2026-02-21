@@ -1,0 +1,183 @@
+<!-- filepath: .github/ISSUE_TEMPLATE/bug_report.yml -->
+name: Bug Report
+description: Report a bug to help us improve AdManager
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - ""
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thank you for reporting a bug!
+
+        Please fill out this form as completely as possible to help us diagnose and fix the issue.
+
+        > **Tip:** Before submitting, please search existing issues to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+      placeholder: |
+        Example:
+        When I try to edit a text with an expired license, the API returns 500 instead of 403.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Detailed steps to reproduce the bug.
+      placeholder: |
+        1. Start the backend with `docker-compose up`
+        2. Send a POST request to /edit with an expired license key
+        3. Observe the error response
+        4. Check the logs
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+      placeholder: |
+        Example:
+        The API should return a 403 Forbidden response with a message "License expired".
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened? Include error messages, stack traces, or screenshots.
+      placeholder: |
+        Example:
+        The API returns 500 Internal Server Error with the following traceback:
+        ```
+        Traceback (most recent call last):
+          File "src/routes/ai.py", line 45, in edit_text
+            ...
+        KeyError: 'expires_at'
+        ```
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is this bug?
+      options:
+        - Critical (system crash, data loss, security vulnerability)
+        - High (major feature broken, no workaround)
+        - Medium (minor feature broken, workaround exists)
+        - Low (cosmetic issue, typo, minor inconvenience)
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      placeholder: "e.g., Windows 11, macOS 14.0, Ubuntu 22.04"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python Version
+      description: What Python version are you using?
+      placeholder: "e.g., 3.11.5"
+    validations:
+      required: true
+
+  - type: input
+    id: app-version
+    attributes:
+      label: Application Version
+      description: What version of AdManager are you using?
+      placeholder: "e.g., v0.2.0, main branch (commit abc123)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: docker
+    attributes:
+      label: Deployment Method
+      description: How did you deploy the application?
+      options:
+        - Docker Compose (recommended)
+        - Local development (uv run)
+        - Kubernetes
+        - Other (specify in Additional Context)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste any relevant logs, console output, or error messages.
+      placeholder: |
+        ```
+        docker-compose logs backend
+        # or
+        uv run uvicorn src.main:app --reload
+        ```
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Variables
+      description: Share any relevant environment variables (remove sensitive data first!).
+      placeholder: |
+        ```bash
+        # Remove sensitive values before sharing!
+        DB_HOST=localhost
+        QDRANT_URL=http://localhost:6333
+        LLM_MODEL=gpt-4o-mini
+        ```
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or information that might be helpful.
+      placeholder: |
+        Example:
+        - This only happens with certain license types
+        - The issue started after updating to version 0.2.0
+        - I've tried restarting the services but the issue persists
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Confirmation
+      description: Please confirm the following
+      options:
+        - label: I have searched existing issues and this is not a duplicate
+          required: true
+        - label: I have verified that this bug occurs on the latest version
+          required: true
+        - label: I have removed all sensitive data from logs and environment variables
+          required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        **Thank you for your report!** 🙏
+
+        Our team will review your issue and respond within 2-3 business days.
+
+        For urgent issues or security vulnerabilities, please see [SECURITY.md](../../SECURITY.md).
