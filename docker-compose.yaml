@@ -50,9 +50,9 @@ services:
     env_file:
       - .env
     # Команда запуска API
-    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8002"]
     ports:
-      - "8000:8000"
+      - "8002:8002"
     # Метка для Watchtower: "Обновляй меня!"
     labels:
       - "com.centurylinklabs.watchtower.enable=true"

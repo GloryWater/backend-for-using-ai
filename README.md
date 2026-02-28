@@ -197,7 +197,7 @@ docker-compose up -d
 docker-compose logs -f
 
 # 5. Access API docs
-# http://localhost:8000/docs
+# http://localhost:8002/docs
 ```
 
 ### Option 2: Local Development
@@ -218,7 +218,7 @@ docker-compose up -d db qdrant
 alembic upgrade head
 
 # 5. Start the backend
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8002
 
 # 6. Start the bot (separate terminal)
 uv run python -m src.bot.bot
@@ -228,13 +228,13 @@ uv run python -m src.bot.bot
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8002/health
 
 # Detailed health check
-curl http://localhost:8000/health/detailed
+curl http://localhost:8002/health/detailed
 
 # Check loader version
-curl http://localhost:8000/loader/version
+curl http://localhost:8002/loader/version
 ```
 
 ---
@@ -317,7 +317,7 @@ LOADER_VERSION_FILE=loader_version.json
 **Example: POST /auth**
 
 ```bash
-curl -X POST http://localhost:8000/auth \
+curl -X POST http://localhost:8002/auth \
   -H "Content-Type: application/json" \
   -d '{"key": "abc123...", "hwid": "device-id-here"}'
 ```
@@ -339,7 +339,7 @@ curl -X POST http://localhost:8000/auth \
 **Example: POST /edit**
 
 ```bash
-curl -X POST http://localhost:8000/edit \
+curl -X POST http://localhost:8002/edit \
   -H "Content-Type: application/json" \
   -d '{
     "key": "abc123...",
@@ -575,8 +575,8 @@ See [LICENSE](LICENSE) for the full license text.
 
 ### Documentation
 
-- **API Documentation:** `http://localhost:8000/docs` (Swagger UI)
-- **Alternative Docs:** `http://localhost:8000/redoc` (ReDoc)
+- **API Documentation:** `http://localhost:8002/docs` (Swagger UI)
+- **Alternative Docs:** `http://localhost:8002/redoc` (ReDoc)
 
 ---
 
