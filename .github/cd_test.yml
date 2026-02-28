@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
   UV_VERSION: "latest"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -65,7 +65,6 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -92,51 +91,30 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            set -e
-
-            echo "🚀 Starting deployment..."
-
             # Navigate to project directory
-            cd /root/admanager || {
-              echo "❌ Project directory not found!"
-              exit 1
-            }
+            cd /root/url_shortener
 
             # Login to GHCR to pull private images
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull latest changes from git
             git pull origin main
 
-            # Pull new Docker images
-            docker compose pull
+            # Pull new Docker image
+            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-            # Run database migrations (CRITICAL: before restart!)
-            echo "🔧 Running database migrations..."
-            docker compose run --rm backend alembic upgrade head
+            # Run database migrations
+            docker compose run --rm url-shortener alembic upgrade head
 
             # Restart services without downtime
-            echo "🔄 Restarting services..."
             docker compose up -d --remove-orphans
 
             # Clean up old Docker images
-            echo "🧹 Cleaning up old images..."
             docker image prune -f
 
             # Logout from GHCR
             docker logout ghcr.io
-
-            # Check container status
-            echo "📊 Container status:"
-            docker compose ps
-
-            # Show last 20 log lines
-            echo "📋 Last 20 log lines:"
-            docker compose logs --tail=20
-
-            echo "✅ Deployment completed successfully!"
 
       - name: Deployment completed
         run: echo "Deployment to server completed successfully!"
