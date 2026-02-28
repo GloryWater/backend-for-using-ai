@@ -9,20 +9,20 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# --- ДОБАВЛЕННЫЙ БЛОК ---
-# 1. Добавляем путь к src, чтобы python видел твои модули
+# --- ADDED BLOCK ---
+# 1. Add path to src so python can see your modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# Если используешь dotenv для загрузки переменных:
+# If using dotenv for loading variables:
 from dotenv import load_dotenv
 
-# 2. Импортируем твои модели (Base) и URL базы
-# Замени путь импорта на свой, если он отличается
+# 2. Import your models (Base) and database URL
+# Replace import path if different
 from src.database.models import Base
 
 load_dotenv()
 
-# Формируем URL. Важно: драйвер должен быть postgresql+asyncpg
+# Form URL. Important: driver must be postgresql+asyncpg
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASS = os.getenv("DB_PASS", "password")
 DB_HOST = os.getenv("DB_HOST", "localhost")

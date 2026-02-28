@@ -1,11 +1,11 @@
 """
-Soak тесты (endurance tests) для проверки длительной работы.
+Soak tests (endurance tests) for long-term operation.
 
-Тестирует стабильность системы при продолжительной нагрузке.
+Tests system stability under prolonged load.
 
-Запуск:
-    pytest tests/load/test_soak.py -v --load  # Быстрый тест (30 сек)
-    pytest tests/load/test_soak.py -v --load --full-mode  # Полный тест (300 сек)
+Run:
+    pytest tests/load/test_soak.py -v --load  # Fast test (30 sec)
+    pytest tests/load/test_soak.py -v --load --full-mode  # Full test (300 sec)
 """
 
 import asyncio
@@ -30,30 +30,30 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.soak
 class TestSoakStability:
-    """Soak тесты стабильности."""
+    """Soak stability tests."""
 
     @pytest.mark.asyncio
     async def test_soak_5min(self, request):
         """
-        Тест стабильности (30 сек быстрый / 5 мин полный).
+        Stability test (30 sec fast / 5 min full).
 
-        Цель: Обнаружить утечки памяти и деградацию производительности.
+        Goal: Detect memory leaks and performance degradation.
 
-        Критерии успеха:
-            - Нет постепенного роста latency
-            - Нет увеличения error rate со временем
-            - Стабильный throughput
+        Success criteria:
+            - No gradual latency growth
+            - No error rate increase over time
+            - Stable throughput
         """
         config = LoadTestConfig.from_pytest_config(request)
         config.test_duration_seconds = config.soak_duration_seconds
-        config.concurrent_users = 3  # Уменьшено (было 5)
+        config.concurrent_users = 3  # Reduced (was 5)
         metrics = LoadTestMetrics()
 
-        # Метрики по временным интервалам
+        # Metrics by time intervals
         interval_metrics = defaultdict(
             lambda: {"requests": 0, "latencies": [], "errors": 0}
         )
-        interval_seconds = 10  # Уменьшено (было 30)
+        interval_seconds = 10  # Reduced (was 30)
 
         async with LoadTestSession(config) as session:
             session.metrics = metrics
@@ -76,7 +76,7 @@ class TestSoakStability:
                 for _ in range(config.concurrent_users)
             ]
 
-            # Сбор метрик по интервалам
+            # Collect metrics by intervals
             async def metrics_collector():
                 last_interval = 0
                 last_total = 0
@@ -122,12 +122,12 @@ class TestSoakStability:
 
             metrics.end_time = time.perf_counter()
 
-        # Анализ деградации (только в полном режиме)
+        # Degradation analysis (only in full mode)
         if len(interval_metrics) >= 2:
             degradation_analysis = analyze_degradation(interval_metrics)
             logger.info(f"Degradation Analysis: {degradation_analysis}")
 
-            # Проверяем деградацию только в полном режиме
+            # Check degradation only in full mode
             if config.full_mode:
                 assert not degradation_analysis[
                     "has_latency_degradation"
@@ -139,28 +139,28 @@ class TestSoakStability:
             report_path = generate_report(metrics, config)
             logger.info(f"Report generated: {report_path}")
 
-        # Проверки
+        # Checks
         assert metrics.total_requests > 0, "No requests were made"
 
 
 @pytest.mark.soak
 class TestSoakMemoryLeak:
-    """Тесты на утечки памяти."""
+    """Memory leak tests."""
 
     @pytest.mark.asyncio
     async def test_memory_leak_detection(self, request):
         """
-        Тест обнаружения утечек памяти через мониторинг latency.
+        Memory leak detection test via latency monitoring.
 
-        Косвенный признак утечки памяти - рост latency со временем.
+        Indirect sign of memory leak - latency growth over time.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 30  # Уменьшено (было 180)
-        config.concurrent_users = 2  # Уменьшено (было 3)
+        config.test_duration_seconds = 30  # Reduced (was 180)
+        config.concurrent_users = 2  # Reduced (was 3)
         metrics = LoadTestMetrics()
 
         latency_samples = []
-        sample_interval = 5  # Уменьшено (было 10)
+        sample_interval = 5  # Reduced (was 10)
 
         async with LoadTestSession(config) as session:
             session.metrics = metrics
@@ -193,7 +193,7 @@ class TestSoakMemoryLeak:
 
             metrics.end_time = time.perf_counter()
 
-        # Анализ тренда latency (информационный, не блокирующий)
+        # Latency trend analysis (informational, non-blocking)
         if len(latency_samples) >= 3:
             trend = analyze_latency_trend(latency_samples)
             logger.info(f"Latency trend: {trend}")
@@ -204,18 +204,18 @@ class TestSoakMemoryLeak:
 
 @pytest.mark.soak
 class TestSoakConnectionPool:
-    """Тесты пула соединений."""
+    """Connection pool tests."""
 
     @pytest.mark.asyncio
     async def test_connection_pool_exhaustion(self, request):
         """
-        Тест истощения пула соединений.
+        Connection pool exhaustion test.
 
-        Цель: Проверить что соединения корректно возвращаются в пул.
+        Goal: Verify that connections are correctly returned to pool.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 30  # Уменьшено (было 120)
-        config.concurrent_users = 5  # Уменьшено (было 10)
+        config.test_duration_seconds = 30  # Reduced (was 120)
+        config.concurrent_users = 5  # Reduced (was 10)
         metrics = LoadTestMetrics()
 
         timeout_errors = 0
@@ -253,7 +253,7 @@ class TestSoakConnectionPool:
         )
         logger.info(f"Results: {metrics.to_dict()}")
 
-        # Не должно быть ошибок соединения
+        # Should not have connection errors
         assert (
             connection_errors == 0
         ), f"Connection errors detected: {connection_errors}"
@@ -265,10 +265,10 @@ class TestSoakConnectionPool:
 
 def analyze_degradation(interval_metrics: dict) -> dict:
     """
-    Анализирует деградацию производительности по интервалам.
+    Analyzes performance degradation by intervals.
 
     Returns:
-        dict с флагами деградации
+        dict with degradation flags
     """
     if len(interval_metrics) < 2:
         return {
@@ -279,7 +279,7 @@ def analyze_degradation(interval_metrics: dict) -> dict:
 
     intervals = sorted(interval_metrics.keys())
 
-    # Сравниваем первый и последний интервалы
+    # Compare first and last intervals
     first = interval_metrics[intervals[0]]
     last = interval_metrics[intervals[-1]]
 
@@ -303,8 +303,8 @@ def analyze_degradation(interval_metrics: dict) -> dict:
     )
 
     return {
-        "has_latency_degradation": latency_growth > 0.3,  # 30% рост
-        "has_throughput_degradation": throughput_decline > 0.3,  # 30% падение
+        "has_latency_degradation": latency_growth > 0.3,  # 30% growth
+        "has_throughput_degradation": throughput_decline > 0.3,  # 30% decline
         "latency_growth_rate": latency_growth,
         "throughput_decline_rate": throughput_decline,
         "intervals_analyzed": len(intervals),
@@ -315,10 +315,10 @@ def analyze_degradation(interval_metrics: dict) -> dict:
 
 def analyze_latency_trend(samples: list[float]) -> dict:
     """
-    Анализирует тренд latency.
+    Analyzes latency trend.
 
     Returns:
-        dict с информацией о тренде
+        dict with trend information
     """
     if len(samples) < 2:
         return {"growth_rate": 0, "trend": "stable"}

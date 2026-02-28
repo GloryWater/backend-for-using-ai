@@ -49,7 +49,7 @@ class License(Base):
     )
 
     # === Новое поле: Связь с User ===
-    # nullable=True позволяет создать лицензию, которая пока никому не принадлежит (если нужно)
+    # nullable=True: лицензия может не принадлежать никому
     owner_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("users.telegram_id"), nullable=True
     )

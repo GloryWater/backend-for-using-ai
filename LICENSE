@@ -3,25 +3,352 @@ PROPRIETARY SOFTWARE LICENSE AGREEMENT
 Copyright (c) 2026 Yauheni Sytsevich
 All Rights Reserved.
 
-1. GRANT OF LICENSE
-This software, including all source code, binaries, documentation, and associated assets ("Software"), is the confidential and proprietary property of [COPYRIGHT HOLDER NAME] ("Licensor"). The Software is protected by copyright laws and international copyright treaties, as well as other intellectual property laws and treaties.
+================================================================================
+                         IMPORTANT NOTICE TO USERS
+================================================================================
 
-2. RESTRICTIONS
-By accessing, viewing, or using this Software, you agree to the following restrictions:
+THIS SOFTWARE IS PROPRIETARY AND CONFIDENTIAL. BY ACCESSING, VIEWING, OR USING
+THIS SOFTWARE, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE AGREEMENT.
+IF YOU DO NOT AGREE TO THESE TERMS, DO NOT USE THIS SOFTWARE.
 
-   a) NO COPYING: You may not copy, reproduce, distribute, republish, download, display, post, or transmit the Software in any form or by any means, including but not limited to electronic, mechanical, photocopying, recording, or otherwise, without the prior written permission of the Licensor.
+================================================================================
+1. DEFINITIONS
+================================================================================
 
-   b) NO MODIFICATION: You may not modify, adapt, translate, or create derivative works based upon the Software.
+"Software" means all source code, object code, binaries, scripts, documentation,
+data files, configuration files, and any other materials associated with the
+AdManager project, including but not limited to:
+  - All Python source code in the src/ directory
+  - All Lua scripts in protected/ and static/ directories
+  - All configuration files (docker-compose.yaml, Dockerfile, etc.)
+  - All test files and testing infrastructure
+  - All documentation, including README.md and related files
+  - All machine learning models, embeddings, and training data
+  - All database schemas and migration files
 
-   c) NO REVERSE ENGINEERING: You may not reverse engineer, decompile, disassemble, or attempt to derive the source code or underlying algorithms of any compiled or binary portions of the Software (including, but not limited to, the Lua loader, encryption logic, and authentication mechanisms), except to the extent that such activity is expressly permitted by applicable law notwithstanding this limitation.
+"Licensor" means Yauheni Sytsevich, the copyright holder of this Software.
 
-   d) NO COMMERCIAL USE: You may not use this Software for any commercial purpose, including but not limited to selling, renting, leasing, or offering it as a service (SaaS), without a valid commercial license agreement explicitly granted by the Licensor.
+"Licensee" means any individual or entity that accesses, views, or uses this
+Software in any manner.
 
-3. UNAUTHORIZED USE
-Any use of the Software not expressly authorized by this Agreement is a violation of copyright laws and constitutes a material breach of this Agreement. Unauthorized use may result in severe civil and criminal penalties.
+================================================================================
+2. GRANT OF LICENSE
+================================================================================
 
-4. DISCLAIMER OF WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+2.1 Limited License. Subject to your strict compliance with all terms and
+conditions of this Agreement, Licensor grants you a limited, non-exclusive,
+non-transferable, revocable license to:
+  (a) View and study the source code for personal, non-commercial purposes only
+  (b) Use the compiled Software solely for its intended purpose as an AI-powered
+      ad text editing service
+  (c) Make one (1) backup copy of the Software for archival purposes only
 
-5. TERMINATION
-This License is effective until terminated. Your rights under this License will terminate automatically without notice from the Licensor if you fail to comply with any term(s) of this License. Upon termination, you must cease all use of the Software and destroy all copies, full or partial, of the Software.
+2.2 Restrictions on Use. This license does NOT permit you to:
+  (a) Use the Software in any commercial product or service
+  (b) Offer the Software as a service (SaaS) to third parties
+  (c) Integrate the Software into any commercial application
+  (d) Use the Software to compete with Licensor's business
+
+================================================================================
+3. STRICT PROHIBITIONS
+================================================================================
+
+By accessing, viewing, or using this Software, you expressly agree to the
+following restrictions:
+
+3.1 NO COPYING. You may not copy, reproduce, duplicate, replicate, or reproduce
+the Software in any form or by any means, including but not limited to:
+  - Electronic copying or transmission
+  - Mechanical copying or photocopying
+  - Digital reproduction or distribution
+  - Cloud storage or sharing services
+  - Version control systems (except for private backup)
+  - Any other method now known or later developed
+
+3.2 NO MODIFICATION. You may not modify, adapt, translate, alter, enhance,
+improve, update, or create derivative works based upon the Software, including
+but not limited to:
+  - Modifying source code in any file
+  - Changing configuration files
+  - Altering database schemas or migrations
+  - Modifying Lua scripts or encryption logic
+  - Creating forks, branches, or modified versions
+  - Translating to other programming languages
+
+3.3 NO DISTRIBUTION. You may not distribute, disseminate, publish, republish,
+display, post, transmit, or share the Software in any manner, including:
+  - Public or private repositories (GitHub, GitLab, Bitbucket, etc.)
+  - File sharing services or torrent trackers
+  - Email attachments or messaging platforms
+  - Social media or forums
+  - Any website or web platform
+  - Physical media or storage devices
+
+3.4 NO REVERSE ENGINEERING. You may not reverse engineer, decompile, disassemble,
+decrypt, or attempt to derive the source code, algorithms, or underlying ideas
+of any portion of the Software, including but not limited to:
+  - Compiled binaries or bytecode
+  - Encrypted Lua scripts
+  - XOR encryption/decryption logic
+  - Authentication mechanisms
+  - License validation algorithms
+  - HWID locking mechanisms
+  - API endpoints and their implementations
+
+EXCEPTION: Reverse engineering is permitted ONLY to the extent expressly
+permitted by applicable law (e.g., EU Software Directive Article 6), and only
+after obtaining prior written permission from Licensor.
+
+3.5 NO COMMERCIAL USE. You may not use this Software for any commercial purpose,
+including but not limited to:
+  - Selling, licensing, or sublicensing the Software
+  - Renting, leasing, or lending the Software
+  - Offering the Software as a service (SaaS, PaaS, IaaS)
+  - Using the Software in connection with any revenue-generating activity
+  - Providing services based on or derived from the Software
+  - Using the Software to provide services to third parties
+
+3.6 NO CIRCUMVENTION. You may not circumvent, bypass, or attempt to circumvent
+any technical protection measures, including but not limited to:
+  - License key validation
+  - HWID locking mechanisms
+  - Encryption or obfuscation
+  - Rate limiting or access controls
+  - Authentication systems
+
+3.7 NO DATA MINING. You may not use automated means to extract, scrape, crawl,
+or harvest any data from the Software, including but not limited to:
+  - Training data in src/AI/data.jsonl
+  - Rules and configurations in src/AI/rules.xml
+  - User data or analytics
+  - API responses or endpoints
+
+================================================================================
+4. INTELLECTUAL PROPERTY RIGHTS
+================================================================================
+
+4.1 Ownership. Licensor retains all right, title, and interest in and to the
+Software, including all intellectual property rights therein. Nothing in this
+Agreement transfers any ownership rights to you.
+
+4.2 Copyright. The Software is protected by copyright laws of the Russian
+Federation, international copyright treaties, and laws of other countries.
+The Software is licensed, not sold. All rights not expressly granted are
+reserved by Licensor.
+
+4.3 Trademarks. Nothing in this Agreement grants you the right to use any
+trademarks, service marks, logos, or trade names of Licensor.
+
+4.4 Confidentiality. You acknowledge that the Software contains trade secrets
+and confidential information of Licensor. You agree to:
+  - Maintain the confidentiality of the Software
+  - Not disclose the Software to any third party
+  - Take all reasonable precautions to protect the Software
+  - Immediately report any unauthorized use or disclosure
+
+================================================================================
+5. TERM AND TERMINATION
+================================================================================
+
+5.1 Term. This License is effective until terminated as provided herein.
+
+5.2 Automatic Termination. Your rights under this License will terminate
+automatically and immediately without notice from Licensor if you:
+  (a) Fail to comply with any term of this Agreement
+  (b) Attempt to circumvent any technical protection measures
+  (c) Use the Software for any unauthorized purpose
+  (d) Initiate patent litigation against Licensor
+
+5.3 Effect of Termination. Upon termination:
+  (a) All licenses and rights granted herein immediately terminate
+  (b) You must cease all use of the Software
+  (c) You must destroy or delete all copies of the Software
+  (d) You must provide written certification of compliance to Licensor
+  (e) Sections 4, 6, 7, 8, 9, and 10 survive termination
+
+5.4 No Refund. Upon termination, you are not entitled to any refund or
+compensation for any fees paid or expenses incurred.
+
+================================================================================
+6. AUDIT RIGHTS
+================================================================================
+
+6.1 Right to Audit. Licensor reserves the right to audit your use of the
+Software to ensure compliance with this Agreement. You agree to:
+  (a) Cooperate fully with any audit request
+  (b) Provide access to systems using the Software
+  (c) Provide copies of relevant logs and records
+  (d) Pay reasonable audit costs if non-compliance is found
+
+6.2 Audit Frequency. Licensor may conduct audits upon reasonable notice,
+not more than once per calendar year, unless non-compliance is discovered.
+
+================================================================================
+7. LIMITED WARRANTY AND DISCLAIMER
+================================================================================
+
+7.1 Limited Warranty. Licensor warrants that:
+  (a) It has the right to grant the license herein
+  (b) The Software does not infringe any third-party intellectual property
+      rights to Licensor's knowledge
+
+7.2 DISCLAIMER OF WARRANTIES. EXCEPT AS EXPRESSLY STATED IN SECTION 7.1,
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO:
+  (a) WARRANTIES OF MERCHANTABILITY
+  (b) WARRANTIES OF FITNESS FOR A PARTICULAR PURPOSE
+  (c) WARRANTIES OF NON-INFRINGEMENT
+  (d) WARRANTIES OF TITLE OR QUIET ENJOYMENT
+  (e) WARRANTIES ARISING FROM COURSE OF DEALING OR USAGE OF TRADE
+
+7.3 No Guarantee of Performance. Licensor does not warrant that:
+  (a) The Software will meet your requirements
+  (b) The Software will be uninterrupted, timely, secure, or error-free
+  (c) The results obtained from using the Software will be accurate or reliable
+  (d) The quality of any products, services, or information obtained will
+      meet your expectations
+  (e) Any errors in the Software will be corrected
+
+================================================================================
+8. LIMITATION OF LIABILITY
+================================================================================
+
+8.1 CONSEQUENTIAL DAMAGES. IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY
+INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR EXEMPLARY DAMAGES, INCLUDING
+BUT NOT LIMITED TO DAMAGES FOR:
+  (a) Loss of profits, revenue, or business
+  (b) Loss of data or corruption of data
+  (c) Loss of goodwill or reputation
+  (d) Business interruption
+  (e) Computer failure or malfunction
+  (f) Any other commercial damages or losses
+
+8.2 CUMULATIVE LIABILITY. IN NO EVENT SHALL LICENSOR'S CUMULATIVE LIABILITY
+TO YOU FOR ALL CLAIMS RELATED TO THIS AGREEMENT EXCEED THE GREATER OF:
+  (a) ONE HUNDRED US DOLLARS (USD $100.00)
+  (b) THE AMOUNT ACTUALLY PAID BY YOU TO LICENSOR FOR THE SOFTWARE
+
+8.3 BASIS OF BARGAIN. THE PARTIES AGREE THAT THE LIMITATIONS AND EXCLUSIONS
+OF LIABILITY SET FORTH HEREIN ARE AN ESSENTIAL BASIS OF THE BARGAIN BETWEEN
+THE PARTIES AND THAT, WITHOUT SUCH LIMITATIONS, THE ECONOMIC TERMS OF THIS
+AGREEMENT WOULD BE SUBSTANTIALLY DIFFERENT.
+
+================================================================================
+9. INDEMNIFICATION
+================================================================================
+
+9.1 Indemnification by Licensee. You agree to indemnify, defend, and hold
+harmless Licensor and its officers, directors, employees, agents, and
+affiliates from and against any and all claims, liabilities, damages, losses,
+costs, expenses, or fees (including reasonable attorneys' fees) arising out of
+or related to:
+  (a) Your use of the Software in violation of this Agreement
+  (b) Your infringement of any third-party intellectual property rights
+  (c) Your violation of any law or regulation
+  (d) Any dispute between you and any third party related to the Software
+
+9.2 Indemnification Procedure. Licensor reserves the right to assume the
+exclusive defense and control of any matter subject to indemnification by you.
+You agree to cooperate fully with Licensor in defending any such claims.
+
+================================================================================
+10. GOVERNING LAW AND DISPUTE RESOLUTION
+================================================================================
+
+10.1 Governing Law. This Agreement shall be governed by and construed in
+accordance with the laws of the Russian Federation, without regard to its
+conflict of law provisions.
+
+10.2 Jurisdiction. Any legal action or proceeding arising under this Agreement
+shall be brought exclusively in the courts located in Minsk, Belarus. The
+parties hereby consent to the personal jurisdiction of such courts.
+
+10.3 No Class Action. YOU AGREE THAT ANY DISPUTE ARISING OUT OF THIS AGREEMENT
+WILL BE CONDUCTED SOLELY ON AN INDIVIDUAL BASIS AND NOT IN A CLASS, CONSOLIDATED,
+OR REPRESENTATIVE ACTION. YOU HEREBY WAIVE ANY RIGHT TO PARTICIPATE IN A CLASS
+ACTION LAWSUIT OR CLASS-WIDE ARBITRATION.
+
+10.4 Attorneys' Fees. In any action or proceeding to enforce rights under this
+Agreement, the prevailing party shall be entitled to recover reasonable
+attorneys' fees and costs.
+
+================================================================================
+11. EXPORT CONTROL
+================================================================================
+
+11.1 Export Restrictions. You acknowledge that the Software may be subject to
+export control laws and regulations of the Russian Federation and other
+jurisdictions. You agree to comply with all applicable export and re-export
+restrictions.
+
+11.2 Prohibited Uses. You represent and warrant that:
+  (a) You are not located in any country subject to export restrictions
+  (b) You will not use the Software for any prohibited end-uses, including
+      but not limited to nuclear, chemical, or biological weapons proliferation
+  (c) You are not identified on any government denied parties list
+
+================================================================================
+12. MISCELLANEOUS PROVISIONS
+================================================================================
+
+12.1 Entire Agreement. This Agreement constitutes the entire agreement between
+the parties and supersedes all prior or contemporaneous agreements,
+understandings, or representations, whether oral or written.
+
+12.2 Amendment. This Agreement may not be amended or modified except by a
+written instrument signed by both parties.
+
+12.3 Severability. If any provision of this Agreement is held to be invalid
+or unenforceable, the remaining provisions shall continue in full force and
+effect. The invalid provision shall be modified to the minimum extent
+necessary to make it enforceable while preserving the original intent.
+
+12.4 Waiver. No waiver of any term of this Agreement shall be deemed a further
+or continuing waiver of such term or any other term. Licensor's failure to
+enforce any provision is not a waiver of that provision.
+
+12.5 Assignment. You may not assign or transfer any rights under this Agreement
+without the prior written consent of Licensor. Any attempted assignment in
+violation of this section is void. Licensor may assign its rights without
+restriction.
+
+12.6 Force Majeure. Neither party shall be liable for any failure or delay in
+performance under this Agreement due to causes beyond its reasonable control,
+including but not limited to acts of God, natural disasters, pandemics, war,
+terrorism, civil unrest, or government actions.
+
+12.7 Relationship of Parties. Nothing in this Agreement creates a partnership,
+joint venture, agency, or employment relationship between the parties.
+
+12.8 Notices. All notices shall be in writing and delivered via email or
+registered mail to the addresses provided by the parties.
+
+12.9 Electronic Signature. This Agreement may be executed electronically, and
+such execution shall have the same legal effect as manual execution.
+
+================================================================================
+13. ACKNOWLEDGMENT
+================================================================================
+
+BY ACCESSING, VIEWING, OR USING THIS SOFTWARE, YOU ACKNOWLEDGE THAT:
+
+  (a) YOU HAVE READ THIS ENTIRE AGREEMENT
+  (b) YOU UNDERSTAND ALL TERMS AND CONDITIONS
+  (c) YOU ARE LEGALLY BOUND BY THIS AGREEMENT
+  (d) YOU ARE AUTHORIZED TO ENTER INTO THIS AGREEMENT
+  (e) VIOLATION OF THIS AGREEMENT MAY RESULT IN SEVERE CIVIL AND CRIMINAL
+      PENALTIES, INCLUDING STATUTORY DAMAGES UP TO $150,000 PER WILLFUL
+      INFRINGEMENT UNDER U.S. COPYRIGHT LAW AND EQUIVALENT PENALTIES UNDER
+      OTHER APPLICABLE LAWS
+
+================================================================================
+                         END OF LICENSE AGREEMENT
+================================================================================
+
+For licensing inquiries, please contact:
+Yauheni Sytsevich
+Email: evgeniy.sytcevich.glory@gmail.com
+Telegram: https://t.me/g_syntax
+
+Document Version: 1.0
+Last Updated: February 28, 2026

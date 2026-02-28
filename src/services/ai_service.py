@@ -26,7 +26,7 @@ _RETRY_DELAY_SECONDS: Final[float] = 1.0
 
 @dataclass(frozen=True)
 class AIServiceConfig:
-    """Конфигурация AIService."""
+    """AIService configuration."""
 
     model_name: str
     temperature: float = _DEFAULT_TEMPERATURE
@@ -146,15 +146,15 @@ class AIService:
     # ── private ──────────────────────────────────────────────
 
     def _validate_input(self, text: str) -> bool:
-        """Проверяет валидность входного текста."""
+        """Validates input text."""
         if not text:
             return False
 
-        # Проверка на "мусор" (только спецсимволы)
+        # Check for "garbage" (only special characters)
         if all(not c.isalnum() and not c.isspace() for c in text):
             return False
 
-        # Проверка максимальной длины (защита от DoS)
+        # Check maximum length (DoS protection)
         if len(text) > 10000:
             logger.warning("Input text too long: %d chars", len(text))
             return False
@@ -162,11 +162,11 @@ class AIService:
         return True
 
     def _get_cache_key(self, text: str) -> str:
-        """Генерирует ключ кэша для текста."""
+        """Generates cache key for text."""
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
     def _get_from_cache(self, cache_key: str) -> str | None:
-        """Получает результат из кэша с проверкой TTL."""
+        """Gets result from cache with TTL check."""
         if cache_key not in self._cache:
             return None
 
@@ -174,24 +174,24 @@ class AIService:
         now = time.time()
 
         if now - timestamp > self._config.cache_ttl_seconds:
-            # Истёк TTL
+            # TTL expired
             del self._cache[cache_key]
             return None
 
-        # LRU: обновляем timestamp при доступе
+        # LRU: update timestamp on access
         self._cache[cache_key] = (result, now)
         return result
 
     def _save_to_cache(self, cache_key: str, result: str) -> None:
-        """Сохраняет результат в кэш с очисткой старых записей."""
-        # Очистка старых записей при переполнении
+        """Saves result to cache with old entries cleanup."""
+        # Cleanup old entries on overflow
         if len(self._cache) >= _MAX_CACHE_SIZE:
             self._cleanup_cache()
 
         self._cache[cache_key] = (result, time.time())
 
     def _cleanup_cache(self) -> None:
-        """Очищает старые записи кэша (LRU)."""
+        """Cleans up old cache entries (LRU)."""
         now = time.time()
         expired = [
             key
@@ -202,10 +202,10 @@ class AIService:
         for key in expired:
             del self._cache[key]
 
-        # Если всё ещё переполнен, удаляем самые старые
+        # If still overflowed, remove oldest entries
         if len(self._cache) >= _MAX_CACHE_SIZE:
             sorted_items = sorted(self._cache.items(), key=lambda x: x[1][1])
-            to_remove = _MAX_CACHE_SIZE // 4  # Удаляем 25%
+            to_remove = _MAX_CACHE_SIZE // 4  # Remove 25%
 
             for key, _ in sorted_items[:to_remove]:
                 del self._cache[key]
@@ -217,7 +217,7 @@ class AIService:
         )
 
     async def _call_llm_with_retry(self, prompt: str) -> str:
-        """Вызывает LLM с retry logic."""
+        """Calls LLM with retry logic."""
         last_exception: Exception | None = None
 
         for attempt in range(1, _MAX_RETRIES + 1):
@@ -227,7 +227,10 @@ class AIService:
                     messages=[
                         {
                             "role": "system",
-                            "content": "Ты ИИ-редактор объявлений. Возвращай только отредактированный текст без пояснений.",
+                            "content": (
+                                "Ты ИИ-редактор объявлений. "
+                                "Возвращай только отредактированный текст без пояснений."
+                            ),
                         },
                         {"role": "user", "content": prompt},
                     ],
@@ -253,7 +256,7 @@ class AIService:
                 last_exception = e
                 status_code = e.status_code if hasattr(e, "status_code") else None
                 if status_code and status_code >= 500:
-                    # Серверная ошибка — можно retry
+                    # Server error - can retry
                     logger.warning(
                         "LLM server error %d (attempt %d/%d): %s",
                         status_code,
@@ -262,7 +265,7 @@ class AIService:
                         e,
                     )
                 else:
-                    # Клиентская ошибка — не retry
+                    # Client error - no retry
                     logger.error("LLM client error %d: %s", status_code or 0, e)
                     raise AIServiceError(f"LLM error: {e}") from e
 
@@ -272,7 +275,7 @@ class AIService:
                     "Unexpected LLM error (attempt %d/%d): %s", attempt, _MAX_RETRIES, e
                 )
 
-            # Задержка перед retry (exponential backoff)
+            # Delay before retry (exponential backoff)
             if attempt < _MAX_RETRIES:
                 await asyncio.sleep(_RETRY_DELAY_SECONDS * attempt)
 
@@ -281,7 +284,7 @@ class AIService:
         ) from last_exception
 
     async def _build_examples_block(self, query: str) -> str:
-        """Строит блок примеров для промпта."""
+        """Builds examples block for prompt."""
         similar = await self._vector_store.find_similar(query)
 
         if not similar:
@@ -312,16 +315,16 @@ class AIService:
         )
 
     def _build_prompt(self, text: str, examples_block: str) -> str:
-        """Строит финальный промпт для LLM."""
+        """Builds final prompt for LLM."""
         rules_section = f"{self._rules}\n" if self._rules else ""
 
         return (
             f"{rules_section}"
             f"{examples_block}"
             f"<instruction>\n"
-            f"Отредактируй следующий текст пользователя согласно правилам выше.\n"
-            f"Входящий текст: {text}\n"
-            f"Верни ТОЛЬКО отредактированный текст или причину отказа. "
-            f"Никаких кавычек, markdown блоков или лишних слов.\n"
+            f"Edit the following user text according to the rules above.\n"
+            f"Input text: {text}\n"
+            f"Return ONLY the edited text or refusal reason. "
+            f"No quotes, markdown blocks, or extra words.\n"
             f"</instruction>"
         )

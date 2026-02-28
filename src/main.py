@@ -6,10 +6,8 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
-from aiogram import Bot
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from openai import AsyncOpenAI
 from sentence_transformers import SentenceTransformer
 
 from src.config import settings
@@ -40,14 +38,14 @@ def _load_rules() -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Устанавливаем время запуска для мониторинга
+    # Set startup time for monitoring
     set_startup_time()
 
     # ── Startup ──────────────────────────────────────────────
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # ML model (CPU, загружается один раз)
+    # ML model (CPU, loaded once)
     logger.info("Loading ML model: %s", settings.ML_MODEL_NAME)
     ml_model = SentenceTransformer(settings.ML_MODEL_NAME)
 
@@ -64,16 +62,19 @@ async def lifespan(app: FastAPI):
     await vector_store.initialize(settings.EXAMPLES_FILE)
 
     # LLM client
+    from openai import AsyncOpenAI
+
     llm_client = AsyncOpenAI(
         api_key=settings.LLM_API_KEY,
         base_url=settings.LLM_BASE_URL,
     )
 
     # Telegram bot
+    from aiogram import Bot
+
     bot = Bot(token=settings.BOT_TOKEN)
 
-    # Собираем сервисы и прокидываем через app.state
-
+    # Collect services and pass through app.state
     app.state.ai_service = AIService(
         llm=llm_client,
         vector_store=vector_store,
@@ -101,13 +102,14 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down application...")
     await app.state.notification_service.close()
     await vector_store.close()
-    await llm_client.close()
+    # AsyncOpenAI doesn't have a close() method, skip it
+    # await llm_client.close()
 
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Добавляем rate limiting middleware
+# Add rate limiting middleware
 app.add_middleware(
     RateLimitMiddleware,
     limiter=create_rate_limiter(

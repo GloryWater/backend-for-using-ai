@@ -1,0 +1,139 @@
+# Нагрузочные тесты для AdManager
+# Запускаются вручную через GitHub UI (workflow_dispatch)
+# НЕ запускаются автоматически в CI пайплайне
+
+name: Load Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Тип нагрузочного теста'
+        required: true
+        default: 'load'
+        type: choice
+        options:
+          - load
+          - stress
+          - soak
+          - spike
+          - chaos
+          - all
+      duration:
+        description: 'Длительность теста (минуты)'
+        required: false
+        default: '5'
+        type: string
+
+env:
+  PYTHON_VERSION: "3.11"
+  UV_CACHE_DIR: /tmp/.uv-cache
+
+jobs:
+  load-tests:
+    name: Run Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    # Сервисы для тестов
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:6333/ || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Cache uv cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: uv-cache-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-cache-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Create test files
+        run: |
+          mkdir -p protected
+          echo '-- Test script' > protected/scriptV2.lua
+          echo '{"version": "0.1", "url": "http://test/loader.lua"}' > loader_version.json
+
+      - name: Run load tests
+        env:
+          DB_USER: test
+          DB_PASS: test
+          DB_NAME: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          BOT_TOKEN: fake_bot_token
+          LLM_API_KEY: fake_llm_key
+          LLM_BASE_URL: https://fake.url/v1
+          LLM_MODEL: gpt-fake
+          TRIBUTE_API_KEY: fake_tribute_key
+          CRYPTOCLOUD_API_KEY: fake_crypto_key
+          QDRANT_URL: http://localhost:6333
+        run: |
+          if [ "${{ inputs.test_type }}" == "all" ]; then
+            echo "Running all load tests..."
+            uv run pytest tests/load/ -v --load --full-mode \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --junitxml=load-test-results.xml
+          else
+            echo "Running ${{ inputs.test_type }} tests..."
+            uv run pytest tests/load/ -v --load -m "${{ inputs.test_type }}" \
+              --cov=src \
+              --cov-report=xml \
+              --cov-report=term-missing \
+              --junitxml=load-test-results.xml
+          fi
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-test-results-${{ github.run_id }}
+          path: |
+            load-test-results.xml
+            coverage.xml
+            htmlcov/
+          retention-days: 30
+
+      - name: Upload coverage to Codecov (optional)
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+          flags: load-tests

@@ -3,7 +3,7 @@
 # Proprietary and confidential.
 
 """
-Health check endpoints для мониторинга состояния сервиса.
+Health check endpoints for service monitoring.
 """
 
 import logging
@@ -23,16 +23,16 @@ router = APIRouter(tags=["Health"])
 
 
 class HealthStatus(BaseModel):
-    """Статус здоровья сервиса."""
+    """Service health status."""
 
-    status: str = Field(..., description="Общий статус: healthy/degraded/unhealthy")
-    version: str = Field(..., description="Версия приложения")
-    timestamp: datetime = Field(..., description="Время проверки")
-    uptime_seconds: float = Field(..., description="Время работы в секундах")
+    status: str = Field(..., description="Overall status: healthy/degraded/unhealthy")
+    version: str = Field(..., description="Application version")
+    timestamp: datetime = Field(..., description="Check timestamp")
+    uptime_seconds: float = Field(..., description="Uptime in seconds")
 
 
 class ComponentHealth(BaseModel):
-    """Статус компонента."""
+    """Component status."""
 
     name: str
     status: str  # healthy, unhealthy, unknown
@@ -41,26 +41,26 @@ class ComponentHealth(BaseModel):
 
 
 class DetailedHealth(HealthStatus):
-    """Детальная информация о здоровье с компонентами."""
+    """Detailed health information with components."""
 
     components: list[ComponentHealth] = Field(
-        default_factory=list, description="Статус компонентов"
+        default_factory=list, description="Component statuses"
     )
-    ai_stats: dict | None = Field(None, description="Статистика AI сервиса")
+    ai_stats: dict | None = Field(None, description="AI service statistics")
 
 
-# Время запуска приложения
+# Application startup time
 _startup_time: datetime | None = None
 
 
 def set_startup_time() -> None:
-    """Устанавливает время запуска приложения."""
+    """Sets the application startup time."""
     global _startup_time
     _startup_time = datetime.now(timezone.utc)
 
 
 def get_uptime() -> float:
-    """Возвращает время работы приложения в секундах."""
+    """Returns the application uptime in seconds."""
     if not _startup_time:
         return 0.0
     return (datetime.now(timezone.utc) - _startup_time).total_seconds()
@@ -71,7 +71,7 @@ async def health_check():
     """
     Basic health check endpoint.
 
-    Returns 200 если сервис работает.
+    Returns 200 if the service is running.
     """
     return HealthStatus(
         status="healthy",
@@ -84,22 +84,22 @@ async def health_check():
 @router.get("/health/detailed", response_model=DetailedHealth, tags=["Health"])
 async def detailed_health_check(db: AsyncSession = Depends(get_db)):
     """
-    Detailed health check с проверкой всех компонентов.
+    Detailed health check with component verification.
 
-    Проверяет:
-        - Подключение к базе данных
-        - Подключение к Qdrant (через VectorStore)
+    Checks:
+        - Database connection
+        - Qdrant connection (via VectorStore)
     """
     components: list[ComponentHealth] = []
     overall_status = "healthy"
 
-    # ─── Проверка базы данных ──────────────────────────────────
+    # ─── Database check ──────────────────────────────────
     try:
         db_start = time.perf_counter()
         await db.execute(text("SELECT 1"))
         db_latency = (time.perf_counter() - db_start) * 1000
 
-        # Проверка наличия таблиц
+        # Check for tables
         result = await db.execute(
             text(
                 "SELECT COUNT(*) FROM information_schema.tables "
@@ -132,7 +132,7 @@ async def detailed_health_check(db: AsyncSession = Depends(get_db)):
         overall_status = "degraded"
         logger.error("Database health check failed: %s", e)
 
-    # ─── Определение общего статуса ────────────────────────────
+    # ─── Determine overall status ────────────────────────────
     unhealthy_count = sum(1 for c in components if c.status == "unhealthy")
     if unhealthy_count > 0:
         overall_status = (
@@ -152,11 +152,11 @@ async def detailed_health_check(db: AsyncSession = Depends(get_db)):
 @router.get("/health/ready", response_model=HealthStatus, tags=["Health"])
 async def readiness_check():
     """
-    Readiness probe для Kubernetes.
+    Readiness probe for Kubernetes.
 
-    Returns 200 только если сервис готов принимать трафик.
+    Returns 200 only if the service is ready to accept traffic.
     """
-    # Проверяем, что приложение запустилось
+    # Check that the application has started
     if not _startup_time:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -174,9 +174,9 @@ async def readiness_check():
 @router.get("/health/live", response_model=HealthStatus, tags=["Health"])
 async def liveness_check():
     """
-    Liveness probe для Kubernetes.
+    Liveness probe for Kubernetes.
 
-    Returns 200 если сервис жив (не завис).
+    Returns 200 if the service is alive (not hung).
     """
     return HealthStatus(
         status="alive",

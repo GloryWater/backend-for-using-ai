@@ -1,7 +1,7 @@
 """
-Тесты для API endpoints.
+Tests for API endpoints.
 
-Используют моки для внешних сервисов и тестовую базу данных.
+Uses mocks for external services and test database.
 """
 
 import pytest
@@ -16,7 +16,7 @@ from src.main import app
 
 @pytest.fixture
 async def db_engine():
-    """Создаёт тестовый движок БД в памяти."""
+    """Creates test database engine in memory."""
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
         echo=False,
@@ -36,7 +36,7 @@ async def db_engine():
 
 @pytest.fixture
 async def db_session(db_engine):
-    """Создаёт тестовую сессию БД."""
+    """Creates test database session."""
     async_session = async_sessionmaker(
         db_engine, class_=AsyncSession, expire_on_commit=False
     )
@@ -47,7 +47,7 @@ async def db_session(db_engine):
 
 @pytest.fixture
 def test_client(db_session):
-    """Создаёт тестовый клиент с переопределённой зависимостью БД и моками сервисов."""
+    """Creates test client with overridden DB dependency and mocked services."""
 
     async def override_get_db():
         yield db_session
@@ -85,7 +85,7 @@ def test_client(db_session):
 
 @pytest.fixture
 async def test_user(db_session):
-    """Создаёт тестового пользователя."""
+    """Creates test user."""
     user = User(telegram_id=123456, username="test_user")
     db_session.add(user)
     await db_session.commit()
@@ -94,7 +94,7 @@ async def test_user(db_session):
 
 @pytest.fixture
 async def active_license(db_session, test_user):
-    """Создаёт активную лицензию для тестового пользователя."""
+    """Creates active license for test user."""
     from datetime import datetime, timedelta, timezone
 
     license_obj = License(
@@ -111,7 +111,7 @@ async def active_license(db_session, test_user):
 
 @pytest.fixture
 async def expired_license(db_session, test_user):
-    """Создаёт просроченную лицензию для тестового пользователя."""
+    """Creates expired license for test user."""
     from datetime import datetime, timedelta, timezone
 
     license_obj = License(
@@ -131,7 +131,7 @@ async def expired_license(db_session, test_user):
 
 @pytest.mark.asyncio
 async def test_health_check(test_client):
-    """Тест basic health check endpoint."""
+    """Tests basic health check endpoint."""
     response = await test_client.get("/health")
     assert response.status_code == 200
 
@@ -144,7 +144,7 @@ async def test_health_check(test_client):
 
 @pytest.mark.asyncio
 async def test_health_detailed(test_client):
-    """Тест detailed health check endpoint."""
+    """Tests detailed health check endpoint."""
     response = await test_client.get("/health/detailed")
     assert response.status_code == 200
 
@@ -156,10 +156,10 @@ async def test_health_detailed(test_client):
 
 @pytest.mark.asyncio
 async def test_health_ready(test_client):
-    """Тест readiness probe."""
+    """Tests readiness probe."""
     from src.routes.health import _startup_time, set_startup_time
 
-    # Устанавливаем время запуска если не установлено
+    # Set startup time if not set
     if not _startup_time:
         set_startup_time()
 
@@ -170,7 +170,7 @@ async def test_health_ready(test_client):
 
 @pytest.mark.asyncio
 async def test_health_live(test_client):
-    """Тест liveness probe."""
+    """Tests liveness probe."""
     response = await test_client.get("/health/live")
     assert response.status_code == 200
     assert response.json()["status"] == "alive"
@@ -181,7 +181,7 @@ async def test_health_live(test_client):
 
 @pytest.mark.asyncio
 async def test_loader_version(test_client):
-    """Тест endpoint версии загрузчика."""
+    """Tests loader version endpoint."""
     response = await test_client.get("/loader/version")
     assert response.status_code == 200
 
@@ -195,7 +195,7 @@ async def test_loader_version(test_client):
 
 @pytest.mark.asyncio
 async def test_auth_success(test_client, active_license):
-    """Тест успешной аутентификации."""
+    """Tests successful authentication."""
     response = await test_client.post(
         "/auth",
         json={"key": "test_key_abc123", "hwid": "test_hwid_12345"},
@@ -209,7 +209,7 @@ async def test_auth_success(test_client, active_license):
 
 @pytest.mark.asyncio
 async def test_auth_license_not_found(test_client):
-    """Тест аутентификации с несуществующим ключом."""
+    """Tests authentication with non-existent key."""
     response = await test_client.post(
         "/auth",
         json={"key": "nonexistent_key", "hwid": "test_hwid"},
@@ -218,12 +218,12 @@ async def test_auth_license_not_found(test_client):
 
     data = response.json()
     assert data["status"] == "error"
-    assert "не найден" in data["message"].lower()
+    assert "not found" in data["message"].lower()
 
 
 @pytest.mark.asyncio
 async def test_auth_expired_license(test_client, expired_license):
-    """Тест аутентификации с просроченной лицензией."""
+    """Tests authentication with expired license."""
     response = await test_client.post(
         "/auth",
         json={"key": "expired_key_xyz789", "hwid": "test_hwid"},
@@ -232,13 +232,13 @@ async def test_auth_expired_license(test_client, expired_license):
 
     data = response.json()
     assert data["status"] == "error"
-    assert "истек" in data["message"].lower()
+    assert "expired" in data["message"].lower()
 
 
 @pytest.mark.asyncio
 async def test_auth_hwid_lock(test_client, active_license, db_session):
-    """Тест HWID lock — первая активация."""
-    # Первая активация — должна пройти
+    """Tests HWID lock — first activation."""
+    # First activation — should pass
     response = await test_client.post(
         "/auth",
         json={"key": "test_key_abc123", "hwid": "hwid_first"},
@@ -246,11 +246,11 @@ async def test_auth_hwid_lock(test_client, active_license, db_session):
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 
-    # Обновляем лицензию из БД
+    # Refresh license from DB
     await db_session.refresh(active_license)
     assert active_license.hwid == "hwid_first"
 
-    # Вторая активация с другим HWID — должна отказать
+    # Second activation with different HWID — should fail
     response = await test_client.post(
         "/auth",
         json={"key": "test_key_abc123", "hwid": "hwid_second"},
@@ -265,8 +265,8 @@ async def test_auth_hwid_lock(test_client, active_license, db_session):
 
 @pytest.mark.asyncio
 async def test_edit_success(test_client, active_license):
-    """Тест успешного редактирования текста."""
-    # AI сервис уже замокан в test_client фикстуре
+    """Tests successful text editing."""
+    # AI service is already mocked in test_client fixture
 
     response = await test_client.post(
         "/edit",
@@ -285,7 +285,7 @@ async def test_edit_success(test_client, active_license):
 
 @pytest.mark.asyncio
 async def test_edit_invalid_license(test_client):
-    """Тест редактирования с невалидной лицензией."""
+    """Tests editing with invalid license."""
     response = await test_client.post(
         "/edit",
         json={
@@ -299,12 +299,12 @@ async def test_edit_invalid_license(test_client):
 
 @pytest.mark.asyncio
 async def test_edit_empty_text(test_client, active_license):
-    """Тест редактирования пустого текста."""
-    # Мокаем пустой ответ
+    """Tests editing empty text."""
+    # Mock empty response
     from src.main import app
 
     app.state.ai_service.edit_text = AsyncMock(
-        return_value="ОТКАЗ: Пустой запрос или некорректный текст"
+        return_value="REFUSAL: Empty or invalid text"
     )
 
     response = await test_client.post(

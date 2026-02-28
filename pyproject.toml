@@ -11,15 +11,15 @@ dependencies = [
     "alembic>=1.18.3",
     "asyncpg>=0.29.0",
     "fastapi>=0.110.0",
-    "langchain-community>=0.3.21",
+    "langchain-community>=0.3.27",
     "mypy>=1.19.1",
-    "numpy<2.0",
+    "numpy>=2.1.0",
     "openai>=1.40.0",
     "pre-commit>=4.5.1",
     "pydantic>=2.8.0",
     "pydantic-settings>=2.4.0",
     "pytest>=9.0.2",
-    "python-multipart>=0.0.9",
+    "python-multipart>=0.0.22",
     "qdrant-client>=1.12.1",
     "requests>=2.32.0",
     "scikit-learn>=1.5.0",
@@ -32,8 +32,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "bandit>=1.9.4",
     "pytest-asyncio>=1.3.0",
+    "pytest-cov>=7.0.0",
     "ruff>=0.15.1",
+    "safety>=3.7.0",
     "types-aiofiles>=25.1.0.20251011",
 ]
 
@@ -41,12 +44,12 @@ dev = [
 module = "aiofiles.*"
 ignore_missing_imports = true
 
-# Игнорируем ошибки типов в bot.py (aiogram v3 имеет сложные union типы)
+# Ignore type errors in bot.py (aiogram v3 has complex union types)
 [[tool.mypy.overrides]]
 module = "src.bot.*"
 disable_error_code = ["union-attr", "arg-type"]
 
-# Игнорируем ошибки типов в alembic (проблемы с заглушками типов)
+# Ignore type errors in alembic (issues with type stubs)
 [[tool.mypy.overrides]]
 module = "alembic.*"
 disable_error_code = ["attr-defined", "index"]

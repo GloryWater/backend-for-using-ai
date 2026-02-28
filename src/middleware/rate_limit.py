@@ -1,8 +1,8 @@
 """
-Rate limiting middleware для защиты API от злоупотреблений.
+Rate limiting middleware for API abuse protection.
 
-Использует simple in-memory хранилище с sliding window логикой.
-Для production рекомендуется использовать Redis.
+Uses simple in-memory storage with sliding window logic.
+For production, Redis-based rate limiting is recommended.
 """
 
 import logging
@@ -20,16 +20,16 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class RateLimitConfig:
-    """Конфигурация rate limit."""
+    """Rate limit configuration."""
 
-    requests: int  # Количество запросов
-    window_seconds: int  # Временное окно в секундах
-    block_duration_seconds: int = 60  # Длительность блокировки при превышении
+    requests: int  # Number of requests
+    window_seconds: int  # Time window in seconds
+    block_duration_seconds: int = 60  # Block duration on exceed
 
 
 @dataclass
 class RequestRecord:
-    """Запись о запросах клиента."""
+    """Client request record."""
 
     timestamps: List[float] = field(default_factory=list)
     blocked_until: float = 0.0
@@ -37,9 +37,9 @@ class RequestRecord:
 
 class RateLimiter:
     """
-    In-memory rate limiter с sliding window.
+    In-memory rate limiter with sliding window.
 
-    WARNING: Для production используйте Redis-based rate limiting.
+    WARNING: For production, use Redis-based rate limiting.
     """
 
     def __init__(self, default_config: RateLimitConfig | None = None):
@@ -52,28 +52,28 @@ class RateLimiter:
         self._configs: dict[str, RateLimitConfig] = {}
 
     def configure(self, path_prefix: str, config: RateLimitConfig) -> None:
-        """Настраивает rate limit для конкретного пути."""
+        """Configures rate limit for a specific path."""
         self._configs[path_prefix] = config
 
     def _get_config(self, path: str) -> RateLimitConfig:
-        """Получает конфигурацию для пути."""
+        """Gets configuration for a path."""
         for prefix, config in self._configs.items():
             if path.startswith(prefix):
                 return config
         return self._default_config
 
     def _cleanup_old_requests(self, record: RequestRecord, window_seconds: int) -> None:
-        """Удаляет старые запросы из окна."""
+        """Removes old requests from the window."""
         now = time.time()
         cutoff = now - window_seconds
         record.timestamps = [ts for ts in record.timestamps if ts > cutoff]
 
     def is_allowed(self, client_id: str, path: str) -> Tuple[bool, dict]:
         """
-        Проверяет, разрешён ли запрос.
+        Checks if a request is allowed.
 
         Returns:
-            Tuple[bool, dict]: (разрешено, заголовки для ответа)
+            Tuple[bool, dict]: (allowed, response headers)
         """
         now = time.time()
         record = self._records[client_id]
@@ -127,9 +127,9 @@ class RateLimiter:
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
-    Middleware для rate limiting.
+    Middleware for rate limiting.
 
-    Пример использования:
+    Example usage:
         app.add_middleware(
             RateLimitMiddleware,
             limiter=RateLimiter(
@@ -148,25 +148,25 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     async def _get_client_id(self, request: Request) -> str:
         """
-        Получает идентификатор клиента.
+        Gets client identifier.
 
-        Приоритет:
-            1. X-Forwarded-For header (первый IP)
+        Priority:
+            1. X-Forwarded-For header (first IP)
             2. X-Real-IP header
             3. client.host
         """
-        # Проверка X-Forwarded-For
+        # Check X-Forwarded-For
         forwarded_for = request.headers.get("x-forwarded-for")
         if forwarded_for:
-            # Берём первый IP (клиентский)
+            # Take the first IP (client)
             return forwarded_for.split(",")[0].strip()
 
-        # Проверка X-Real-IP
+        # Check X-Real-IP
         real_ip = request.headers.get("x-real-ip")
         if real_ip:
             return real_ip.strip()
 
-        # Fallback на client.host
+        # Fallback to client.host
         return request.client.host if request.client else "unknown"
 
     async def dispatch(self, request: Request, call_next: Callable):
@@ -212,15 +212,15 @@ def create_rate_limiter(
     default_block_duration: int = 300,
 ) -> RateLimiter:
     """
-    Создаёт настроенный rate limiter.
+    Creates a configured rate limiter.
 
     Args:
-        default_requests: Запросов по умолчанию в окно
-        default_window_seconds: Размер окна по умолчанию
-        default_block_duration: Длительность блокировки по умолчанию
+        default_requests: Default requests per window
+        default_window_seconds: Default window size
+        default_block_duration: Default block duration
 
     Returns:
-        Настроенный RateLimiter
+        Configured RateLimiter
     """
     limiter = RateLimiter(
         default_config=RateLimitConfig(
@@ -230,27 +230,27 @@ def create_rate_limiter(
         )
     )
 
-    # Строгие лимиты для auth endpoints (защита от brute force)
+    # Strict limits for auth endpoints (brute force protection)
     limiter.configure(
         "/auth",
         RateLimitConfig(
-            requests=10,  # 10 попыток
-            window_seconds=60,  # в минуту
-            block_duration_seconds=900,  # 15 минут блокировка
+            requests=10,  # 10 attempts
+            window_seconds=60,  # per minute
+            block_duration_seconds=900,  # 15 minutes block
         ),
     )
 
-    # Лимиты для AI endpoints (дорогие запросы)
+    # Limits for AI endpoints (expensive requests)
     limiter.configure(
         "/edit",
         RateLimitConfig(
-            requests=30,  # 30 запросов
-            window_seconds=60,  # в минуту
-            block_duration_seconds=300,  # 5 минут блокировка
+            requests=30,  # 30 requests
+            window_seconds=60,  # per minute
+            block_duration_seconds=300,  # 5 minutes block
         ),
     )
 
-    # Более мягкие лимиты для вебхуков (они редкие)
+    # Softer limits for webhooks (they are rare)
     limiter.configure(
         "/callback",
         RateLimitConfig(

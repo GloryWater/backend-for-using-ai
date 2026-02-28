@@ -1,11 +1,11 @@
 """
-Stress тесты для проверки предельных нагрузок.
+Stress tests for extreme load.
 
-Тестирует поведение системы за пределами нормальной нагрузки.
+Tests system behavior beyond normal load.
 
-Запуск:
-    pytest tests/load/test_stress.py -v --load  # Быстрый тест
-    pytest tests/load/test_stress.py -v --load --full-mode  # Полный тест
+Run:
+    pytest tests/load/test_stress.py -v --load  # Fast test
+    pytest tests/load/test_stress.py -v --load --full-mode  # Full test
 """
 
 import asyncio
@@ -29,18 +29,18 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.stress
 class TestStressAuthEndpoint:
-    """Stress тесты для /auth endpoint."""
+    """Stress tests for /auth endpoint."""
 
     @pytest.mark.asyncio
     async def test_auth_stress(self, request):
         """
-        Стресс-тест аутентификации с высокой нагрузкой.
+        Authentication stress test with high load.
 
-        Цель: Определить точку отказа и максимальную пропускную способность.
+        Goal: Determine failure point and maximum throughput.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.concurrent_users = config.concurrent_users * 3  # 3x нагрузка (было 5x)
-        config.test_duration_seconds = 15  # Короткий тест (было 30)
+        config.concurrent_users = config.concurrent_users * 3  # 3x load (was 5x)
+        config.test_duration_seconds = 15  # Short test (was 30)
         metrics = LoadTestMetrics()
 
         async with LoadTestSession(config) as session:
@@ -78,29 +78,29 @@ class TestStressAuthEndpoint:
             report_path = generate_report(metrics, config)
             logger.info(f"Report generated: {report_path}")
 
-        # Проверяем что система выжила
+        # Check that system survived
         assert metrics.total_requests > 0
-        # Допускаем до 70% ошибок при стрессе (было 50%)
+        # Allow up to 70% errors under stress (was 50%)
         assert metrics.error_rate < 70, f"Too many errors: {metrics.error_rate}%"
 
 
 @pytest.mark.stress
 class TestStressEditEndpoint:
-    """Stress тесты для /edit endpoint."""
+    """Stress tests for /edit endpoint."""
 
     @pytest.mark.asyncio
     async def test_edit_stress(self, request):
         """
-        Стресс-тест редактирования с высокой нагрузкой.
+        Editing stress test with high load.
 
-        Цель: Проверить как LLM сервис справляется с перегрузкой.
+        Goal: Check how LLM service handles overload.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.concurrent_users = 5  # Уменьшено (было 20)
-        config.test_duration_seconds = 15  # Уменьшено (было 30)
+        config.concurrent_users = 5  # Reduced (was 20)
+        config.test_duration_seconds = 15  # Reduced (was 30)
         metrics = LoadTestMetrics()
 
-        test_texts = ["Продам гараж " + str(i) for i in range(10)]
+        test_texts = ["Sell garage " + str(i) for i in range(10)]
 
         async with LoadTestSession(config) as session:
             session.metrics = metrics
@@ -146,19 +146,19 @@ class TestStressEditEndpoint:
 
 @pytest.mark.stress
 class TestStressConcurrentConnections:
-    """Тесты на максимальное количество соединений."""
+    """Maximum connection tests."""
 
     @pytest.mark.asyncio
     async def test_max_connections(self, request):
         """
-        Тест на максимальное количество одновременных соединений.
+        Maximum concurrent connections test.
 
-        Цель: Определить лимит соединений сервера.
+        Goal: Determine server connection limit.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.concurrent_users = 20  # Уменьшено (было 100)
-        config.test_duration_seconds = 10  # Уменьшено (было 20)
-        config.timeout_seconds = 5  # Уменьшено (было 10)
+        config.concurrent_users = 20  # Reduced (was 100)
+        config.test_duration_seconds = 10  # Reduced (was 20)
+        config.timeout_seconds = 5  # Reduced (was 10)
         metrics = LoadTestMetrics()
 
         async with LoadTestSession(config) as session:
@@ -190,33 +190,33 @@ class TestStressConcurrentConnections:
             report_path = generate_report(metrics, config)
             logger.info(f"Report generated: {report_path}")
 
-        # Даже при перегрузке некоторые запросы должны пройти
+        # Even under overload some requests should pass
         assert metrics.total_requests > 0
 
 
 @pytest.mark.stress
 class TestStressInvalidRequests:
-    """Стресс-тест невалидными запросами."""
+    """Invalid requests stress test."""
 
     @pytest.mark.asyncio
     async def test_invalid_requests_flood(self, request):
         """
-        Стресс-тест потоком невалидных запросов.
+        Invalid requests flood stress test.
 
-        Цель: Проверить что сервер корректно отклоняет невалидные запросы
-        и продолжает работать.
+        Goal: Verify that server correctly rejects invalid requests
+        and continues to work.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.concurrent_users = 5  # Уменьшено (было 20)
-        config.test_duration_seconds = 15  # Уменьшено (было 30)
+        config.concurrent_users = 5  # Reduced (was 20)
+        config.test_duration_seconds = 15  # Reduced (was 30)
         metrics = LoadTestMetrics()
 
         invalid_payloads = [
-            {"key": "", "hwid": "test"},  # Пустой ключ
-            {"key": "x" * 1000, "hwid": "test"},  # Очень длинный ключ
-            {"key": "test", "hwid": ""},  # Пустой HWID
-            {"wrong": "data"},  # Неправильная структура
-            {},  # Пустой объект
+            {"key": "", "hwid": "test"},  # Empty key
+            {"key": "x" * 1000, "hwid": "test"},  # Very long key
+            {"key": "test", "hwid": ""},  # Empty HWID
+            {"wrong": "data"},  # Wrong structure
+            {},  # Empty object
         ]
 
         async with LoadTestSession(config) as session:
@@ -250,8 +250,8 @@ class TestStressInvalidRequests:
 
         logger.info(f"Invalid Requests Results: {metrics.to_dict()}")
 
-        # После невалидных запросов сервер должен продолжать работать
-        # Проверим это здоровым запросом
+        # After invalid requests server should continue working
+        # Check this with a healthy request
         async with LoadTestSession(config) as health_session:
             result = await health_session.request("GET", "/health")
             assert result.status_code == 200, "Server is broken after invalid requests"
@@ -259,26 +259,26 @@ class TestStressInvalidRequests:
 
 @pytest.mark.stress
 class TestStressRampUp:
-    """Тесты с быстрым увеличением нагрузки."""
+    """Fast load increase tests."""
 
     @pytest.mark.asyncio
     async def test_rapid_ramp_up(self, request):
         """
-        Тест быстрого увеличения нагрузки.
+        Fast load increase test.
 
-        Цель: Проверить как система справляется с резким ростом трафика.
+        Goal: Check how system handles sharp traffic growth.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.concurrent_users = 15  # Уменьшено (было 50)
-        config.ramp_up_seconds = 2  # Быстрый ramp-up
-        config.test_duration_seconds = 15  # Уменьшено (было 30)
+        config.concurrent_users = 15  # Reduced (was 50)
+        config.ramp_up_seconds = 2  # Fast ramp-up
+        config.test_duration_seconds = 15  # Reduced (was 30)
         metrics = LoadTestMetrics()
 
         async with LoadTestSession(config) as session:
             session.metrics = metrics
             metrics.start_time = time.perf_counter()
 
-            # Быстрый ramp-up
+            # Fast ramp-up
             tasks = []
             ramp_delay = config.ramp_up_seconds / config.concurrent_users
 

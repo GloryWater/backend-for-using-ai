@@ -1,11 +1,11 @@
 """
-Chaos Engineering тесты для проверки отказоустойчивости.
+Chaos Engineering tests for fault tolerance.
 
-Тестирует поведение системы при различных сбоях.
+Tests system behavior under various failures.
 
-Запуск:
-    pytest tests/load/test_chaos.py -v --load  # Быстрый тест
-    pytest tests/load/test_chaos.py -v --load --full-mode  # Полный тест
+Run:
+    pytest tests/load/test_chaos.py -v --load  # Fast test
+    pytest tests/load/test_chaos.py -v --load --full-mode  # Full test
 """
 
 import asyncio
@@ -29,15 +29,15 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.chaos
 class TestChaosLatency:
-    """Chaos тесты с задержками."""
+    """Chaos tests with latency."""
 
     @pytest.mark.asyncio
     async def test_random_latency_injection(self, request):
         """
-        Тест с искусственными задержками.
+        Test with artificial delays.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 20  # Уменьшено (было 60)
+        config.test_duration_seconds = 20  # Reduced (was 60)
         metrics = LoadTestMetrics()
 
         async with LoadTestSession(config) as session:
@@ -47,7 +47,7 @@ class TestChaosLatency:
             async def chaos_worker():
                 while session.is_running:
                     if random.random() < config.chaos_probability:
-                        delay = random.uniform(0.5, 2)  # Уменьшено (было 1-5)
+                        delay = random.uniform(0.5, 2)  # Reduced (was 1-5)
                         await asyncio.sleep(delay)
                     await session.request("GET", "/health")
 
@@ -70,15 +70,15 @@ class TestChaosLatency:
 
 @pytest.mark.chaos
 class TestChaosErrors:
-    """Chaos тесты с ошибками."""
+    """Chaos tests with errors."""
 
     @pytest.mark.asyncio
     async def test_random_error_injection(self, request):
         """
-        Тест со случайными ошибками.
+        Test with random errors.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 20  # Уменьшено (было 60)
+        config.test_duration_seconds = 20  # Reduced (was 60)
         metrics = LoadTestMetrics()
 
         async with LoadTestSession(config) as session:
@@ -110,18 +110,18 @@ class TestChaosErrors:
 
 @pytest.mark.chaos
 class TestChaosServiceFailure:
-    """Тесты отказа сервисов."""
+    """Service failure tests."""
 
     @pytest.mark.asyncio
     async def test_database_failure_simulation(self, request):
         """
-        Симуляция отказа базы данных.
+        Database failure simulation.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 30  # Уменьшено (было 90)
+        config.test_duration_seconds = 30  # Reduced (was 90)
         metrics = LoadTestMetrics()
 
-        failure_start = 10  # Уменьшено
+        failure_start = 10  # Reduced
         failure_end = 20
 
         async with LoadTestSession(config) as session:
@@ -161,27 +161,27 @@ class TestChaosServiceFailure:
 
 @pytest.mark.chaos
 class TestChaosResourceExhaustion:
-    """Тесты истощения ресурсов."""
+    """Resource exhaustion tests."""
 
     @pytest.mark.asyncio
     async def test_memory_pressure_simulation(self, request):
         """
-        Симуляция нехватки памяти через большие payloads.
+        Memory shortage simulation via large payloads.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 20  # Уменьшено (было 60)
+        config.test_duration_seconds = 20  # Reduced (was 60)
         metrics = LoadTestMetrics()
 
         normal_payload = {
             "key": config.test_license_key,
             "hwid": config.test_hwid,
-            "text": "Продам гараж",
+            "text": "Sell garage",
         }
         large_payload = {
             "key": config.test_license_key,
             "hwid": config.test_hwid,
-            "text": "Продам гараж "
-            + "очень длинное описание " * 100,  # Уменьшено (было 1000)
+            "text": "Sell garage "
+            + "very long description " * 100,  # Reduced (was 1000)
         }
 
         async with LoadTestSession(config) as session:
@@ -211,19 +211,19 @@ class TestChaosResourceExhaustion:
 
 @pytest.mark.chaos
 class TestChaosNetworkIssues:
-    """Тесты проблем сети."""
+    """Network issue tests."""
 
     @pytest.mark.asyncio
     async def test_network_partition_simulation(self, request):
         """
-        Симуляция сетевого разделения.
+        Network partition simulation.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 30  # Уменьшено (было 90)
+        config.test_duration_seconds = 30  # Reduced (was 90)
         config.timeout_seconds = 5
         metrics = LoadTestMetrics()
 
-        partition_periods = [(10, 15), (20, 25)]  # Уменьшено
+        partition_periods = [(10, 15), (20, 25)]  # Reduced
 
         async with LoadTestSession(config) as session:
             session.metrics = metrics
@@ -260,15 +260,15 @@ class TestChaosNetworkIssues:
 
 @pytest.mark.chaos
 class TestChaosCascadingFailure:
-    """Тесты каскадных отказов."""
+    """Cascading failure tests."""
 
     @pytest.mark.asyncio
     async def test_cascading_failure_prevention(self, request):
         """
-        Тест предотвращения каскадных отказов.
+        Cascading failure prevention test.
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.test_duration_seconds = 30  # Уменьшено (было 120)
+        config.test_duration_seconds = 30  # Reduced (was 120)
         metrics = LoadTestMetrics()
 
         async with LoadTestSession(config) as session:
@@ -309,5 +309,5 @@ class TestChaosCascadingFailure:
             metrics.end_time = time.perf_counter()
 
         logger.info(f"Cascading Failure Test: {metrics.to_dict()}")
-        # Мягкая проверка - система не должна полностью упасть
+        # Soft check - system should not completely fail
         assert metrics.total_requests > 0

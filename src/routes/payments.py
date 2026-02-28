@@ -31,15 +31,15 @@ async def handle_cryptocloud_postback(
     notifier: Notifier,
 ):
     """
-    Обработка вебхука от CryptoCloud.
+    Handles CryptoCloud webhook.
 
-    Идемпотентность:
-        - Проверяем, не обрабатывали ли уже этот invoice_id
-        - Используем атомарное обновление в БД
+    Idempotency:
+        - Check if this invoice_id was already processed
+        - Use atomic database update
     """
     invoice_id = f"{_CRYPTOCLOUD_ORDER_PREFIX}{data.invoice_id}"
 
-    # Логирование входящего запроса
+    # Log incoming request
     logger.info(
         "CryptoCloud postback received: invoice_id=%s, status=%s, amount=%.2f %s",
         invoice_id,
@@ -50,7 +50,7 @@ async def handle_cryptocloud_postback(
 
     async with AsyncSessionLocal() as session:
         try:
-            # Проверка на идемпотентность — ищем существующий платеж
+            # Idempotency check - look for existing payment
             stmt = select(CryptocloudPayments).where(
                 CryptocloudPayments.check_id == invoice_id
             )
@@ -66,13 +66,14 @@ async def handle_cryptocloud_postback(
 
             if data.status != "success":
                 logger.warning(
-                    "CryptoCloud postback with non-success status: invoice_id=%s, status=%s",
+                    "CryptoCloud postback with non-success status: "
+                    "invoice_id=%s, status=%s",
                     invoice_id,
                     data.status,
                 )
                 return {"message": "Not success status"}
 
-            # Обновляем платеж как успешный
+            # Update payment as successful
             payer_id = await set_payment_success_and_get_user(session, invoice_id)
 
             if not payer_id:
@@ -82,14 +83,15 @@ async def handle_cryptocloud_postback(
                 )
                 return {"message": "Payment recorded, but user notification failed"}
 
-            # Выдача лицензии
+            # Issue license
             key = await add_license(session, owner_id=payer_id, days=30)
 
-            # Уведомление пользователя
+            # Notify user
             await notifier.send_license_issued(payer_id, key)
 
             logger.info(
-                "CryptoCloud postback processed successfully: invoice_id=%s, user_id=%d, key=%s***",
+                "CryptoCloud postback processed successfully: "
+                "invoice_id=%s, user_id=%d, key=%s***",
                 invoice_id,
                 payer_id,
                 key[-4:],
@@ -99,7 +101,7 @@ async def handle_cryptocloud_postback(
 
         except SQLAlchemyError as e:
             logger.exception("Database error during CryptoCloud postback: %s", e)
-            # Возвращаем ошибку, чтобы CryptoCloud повторил попытку
+            # Return error to allow CryptoCloud retry
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Database error",
@@ -119,11 +121,11 @@ async def handle_tribute_webhook(
     notifier: Notifier,
 ):
     """
-    Обработка вебхука от Tribute.
+    Handles Tribute webhook.
 
-    Идемпотентность:
-        - Используем created_at + user_id как ключ идемпотентности
-        - Проверяем, не выдавали ли уже лицензию этому пользователю recently
+    Idempotency:
+        - Use created_at + user_id as idempotency key
+        - Check if license was already issued to this user
     """
     try:
         event: TributeWebhookEvent = webhook_adapter.validate_json(body_bytes)
@@ -134,7 +136,7 @@ async def handle_tribute_webhook(
             detail="Invalid payload structure",
         ) from e
 
-    # Логирование события
+    # Log event
     logger.info(
         "Tribute webhook received: event=%s, user_id=%s, amount=%s",
         event.name,
@@ -150,22 +152,22 @@ async def handle_tribute_webhook(
         )
         return {"status": "ignored"}
 
-    # Проверка на идемпотентность — не выдавали ли лицензию недавно
+    # Idempotency check - check if license was issued recently
     async with AsyncSessionLocal() as session:
         try:
-            # Проверяем, есть ли у пользователя активная лицензия, выданная недавно
+            # Check if user has an active license issued recently
             license_key = await _check_and_grant_license(
                 session, user_id, event.created_at
             )
 
             if license_key:
-                # Лицензия уже выдана или только что выдана
+                # License already issued or just issued
                 return {"status": "processed", "user_id": user_id}
 
-            # Выдача новой лицензии
+            # Issue new license
             key = await add_license(session, owner_id=user_id, days=30)
 
-            # Уведомление
+            # Notify
             await notifier.send_license_issued(user_id, key)
 
             logger.info(
@@ -195,19 +197,19 @@ async def _check_and_grant_license(
     session, user_id: int, event_time: datetime
 ) -> str | None:
     """
-    Проверяет, не выдавали ли лицензию этому пользователю недавно.
+    Checks if a license was issued to this user recently.
 
     Returns:
-        Ключ лицензии если уже выдана, None если нужно выдать
+        License key if already issued, None if needs to be issued
     """
     from src.database.crud import get_user_license
 
-    # Проверяем существующую лицензию
+    # Check existing license
     existing = await get_user_license(session, user_id)
 
     if existing:
         now = datetime.now(timezone.utc)
-        # Если лицензия активна и выдана недавно (в пределах окна идемпотентности)
+        # If license is active and issued recently (within idempotency window)
         if existing.is_active and existing.expires_at > now:
             time_since_created = now - existing.created_at
             if time_since_created.total_seconds() < _IDEMPOTENCY_WINDOW_HOURS * 3600:
@@ -222,18 +224,18 @@ async def _check_and_grant_license(
 
 
 def _extract_payer_id(event: TributeWebhookEvent) -> int | None:
-    """Извлекает telegram_user_id из события, если оно релевантно."""
+    """Extracts telegram_user_id from event if applicable."""
     payload = event.payload
 
-    # События, которые точно содержат telegram_user_id
+    # Events that definitely contain telegram_user_id
     if event.name in ("new_donation", "new_subscription"):
         return payload.telegram_user_id
 
-    # Физические товары — только если статус "paid" или "created"
+    # Physical goods - only if status is "paid" or "created"
     if event.name == "physical_order_created":
         if getattr(payload, "status", None) not in ("paid", "created"):
             return None
         return payload.telegram_user_id
 
-    # Остальные события игнорируем
+    # Ignore other events
     return None

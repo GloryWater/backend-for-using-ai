@@ -1,5 +1,5 @@
 """
-Тесты для криптографических утилит.
+Tests for cryptographic utilities.
 """
 
 import pytest
@@ -17,21 +17,21 @@ from src.utils.crypto import (
 
 
 class TestXorEncrypt:
-    """Тесты для XOR шифрования."""
+    """Tests for XOR encryption."""
 
     def test_xor_encrypt_basic(self):
-        """Базовый тест шифрования."""
+        """Basic encryption test."""
         data = b"Hello, World!"
         key = "test_key_12345"
 
         encrypted = xor_encrypt(data, key)
 
-        # Результат должен отличаться от оригинала
+        # Result must differ from original
         assert encrypted != data
         assert len(encrypted) == len(data)
 
     def test_xor_decrypt_symmetric(self):
-        """Тест симметричности XOR (шифрование = расшифрование)."""
+        """XOR symmetry test (encryption = decryption)."""
         data = b"Secret message"
         key = "my_secret_key"
 
@@ -41,7 +41,7 @@ class TestXorEncrypt:
         assert decrypted == data
 
     def test_xor_encrypt_empty_data(self):
-        """Шифрование пустых данных."""
+        """Encrypting empty data."""
         data = b""
         key = "test_key"
 
@@ -49,9 +49,9 @@ class TestXorEncrypt:
         assert encrypted == b""
 
     def test_xor_encrypt_short_key(self):
-        """Шифрование с коротким ключом (меньше данных)."""
+        """Encryption with short key (less than data)."""
         data = b"Long message that is longer than key"
-        key = "short_key"  # 9 символов, больше минимума 8
+        key = "short_key"  # 9 characters, more than minimum 8
 
         encrypted = xor_encrypt(data, key)
         decrypted = xor_decrypt(encrypted, key)
@@ -59,16 +59,16 @@ class TestXorEncrypt:
         assert decrypted == data
 
     def test_xor_encrypt_invalid_key_too_short(self):
-        """Шифрование с слишком коротким ключом."""
+        """Encryption with too short key."""
         data = b"Test data"
-        key = "short"  # 5 символов, минимум 8
+        key = "short"  # 5 characters, minimum 8
 
-        # Ключ меньше минимальной длины
+        # Key is less than minimum length
         with pytest.raises(InvalidKeyError):
             xor_encrypt(data, key)
 
     def test_xor_encrypt_data_too_large(self):
-        """Шифрование слишком больших данных."""
+        """Encrypting too large data."""
         data = b"x" * (10 * 1024 * 1024 + 1)  # 10MB + 1 byte
         key = "valid_key_123"
 
@@ -77,21 +77,21 @@ class TestXorEncrypt:
 
 
 class TestEncryptAndEncode:
-    """Тесты для encrypt_and_encode."""
+    """Tests for encrypt_and_encode."""
 
     def test_encrypt_and_encode_basic(self):
-        """Базовый тест шифрования с кодированием."""
+        """Basic encryption with encoding test."""
         data = b"Test message"
         key = "encryption_key_123"
 
         result = encrypt_and_encode(data, key)
 
-        # Результат должен быть base64 строкой
+        # Result must be a base64 string
         assert isinstance(result, str)
         assert result.isascii()
 
     def test_encrypt_and_encode_roundtrip(self):
-        """Тест полного цикла (шифрование + расшифрование)."""
+        """Full cycle test (encryption + decryption)."""
         data = b"Round trip test"
         key = "round_trip_key_123"
 
@@ -101,23 +101,23 @@ class TestEncryptAndEncode:
         assert decoded == data
 
     def test_encrypt_and_encode_invalid_base64(self):
-        """Расшифрование невалидного base64."""
+        """Decryption of invalid base64."""
         with pytest.raises(CryptoError):
             decode_and_decrypt("!!!invalid_base64!!!", "key")
 
 
 class TestVerifyHmacSignature:
-    """Тесты для HMAC верификации."""
+    """Tests for HMAC verification."""
 
     def test_verify_valid_signature(self):
-        """Верификация валидной подписи."""
+        """Valid signature verification."""
         import hmac
         import hashlib
 
         body = b'{"test": "data"}'
         secret = "super_secret_key"
 
-        # Создаём правильную подпись
+        # Create correct signature
         expected_signature = hmac.new(
             secret.encode("utf-8"), body, hashlib.sha256
         ).hexdigest()
@@ -126,7 +126,7 @@ class TestVerifyHmacSignature:
         assert result is True
 
     def test_verify_invalid_signature(self):
-        """Верификация невалидной подписи."""
+        """Invalid signature verification."""
         body = b'{"test": "data"}'
         secret = "super_secret_key"
 
@@ -134,7 +134,7 @@ class TestVerifyHmacSignature:
         assert result is False
 
     def test_verify_empty_signature(self):
-        """Верификация с пустой подписью."""
+        """Verification with empty signature."""
         body = b'{"test": "data"}'
         secret = "super_secret_key"
 
@@ -142,7 +142,7 @@ class TestVerifyHmacSignature:
         assert result is False
 
     def test_verify_tampered_body(self):
-        """Верификация с изменённым телом."""
+        """Verification with tampered body."""
         import hmac
         import hashlib
 
@@ -150,15 +150,15 @@ class TestVerifyHmacSignature:
         tampered_body = b'{"test": "tampered"}'
         secret = "super_secret_key"
 
-        # Создаём подпись для оригинального тела
+        # Create signature for original body
         signature = hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
 
-        # Проверяем с изменённым телом
+        # Verify with tampered body
         result = verify_hmac_signature(tampered_body, signature, secret)
         assert result is False
 
     def test_verify_unicode_content(self):
-        """Верификация с unicode содержимым."""
+        """Verification with unicode content."""
         import hmac
         import hashlib
 

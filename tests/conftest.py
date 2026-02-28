@@ -1,20 +1,20 @@
 """
-Конфигурация pytest и общие фикстуры.
+Pytest configuration and common fixtures.
 
-Запуск тестов:
-    # Быстрые unit тесты (по умолчанию)
+Run tests:
+    # Fast unit tests (default)
     pytest tests/ -v
 
-    # Load тесты (требуют запущенного сервера)
+    # Load tests (require running server)
     pytest tests/load/ -v --load
 
-    # Load тесты в полном режиме (длительные)
+    # Load tests in full mode (long)
     pytest tests/load/ -v --load --full-mode
 
-    # Все тесты кроме load
+    # All tests except load
     pytest tests/ -v -m "not load"
 
-    # Конкретный тип тестов
+    # Specific test type
     pytest tests/load/ -v --load -m stress
 """
 
@@ -44,17 +44,17 @@ os.environ["QDRANT_URL"] = "http://localhost:6333"
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_files():
-    """Создаёт тестовые файлы (скрипт, version) для тестов."""
-    # Создаём директорию protected если нет
+    """Creates test files (script, version) for tests."""
+    # Create protected directory if not exists
     protected_dir = Path("protected")
     protected_dir.mkdir(exist_ok=True)
 
-    # Создаём фиктивный Lua скрипт
+    # Create fake Lua script
     script_file = protected_dir / "scriptV2.lua"
     if not script_file.exists():
         script_file.write_text("-- Test script\nprint('Hello from test script')")
 
-    # Создаём loader_version.json если нет
+    # Create loader_version.json if not exists
     version_file = Path("loader_version.json")
     if not version_file.exists():
         version_file.write_text('{"version": "0.1", "url": "http://test/loader.lua"}')
@@ -63,19 +63,19 @@ def setup_test_files():
 
 
 def pytest_collection_modifyitems(config, items):
-    """Пропускает load тесты если не указан флаг --load."""
-    # Проверяем, указан ли флаг --load (используем getattr для безопасности)
+    """Skips load tests if --load flag is not specified."""
+    # Check if --load flag is specified (use getattr for safety)
     if getattr(config.option, "load", False):
         return
 
-    # Проверяем, не запрошен ли конкретный маркер через -m
+    # Check if specific marker is not requested via -m
     markexpr = str(getattr(config.option, "markexpr", "") or "")
     load_markers = ["load", "stress", "soak", "spike", "chaos"]
     if any(marker in markexpr for marker in load_markers):
-        # Маркер указан явно, разрешаем запуск
+        # Marker is specified explicitly, allow run
         return
 
-    # Пропускаем load тесты если флаг --load не указан
+    # Skip load tests if --load flag is not specified
     skip_load = pytest.mark.skip(reason="Need --load flag to run load tests")
     for item in items:
         if any(marker.name in load_markers for marker in item.iter_markers()):
@@ -85,24 +85,24 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture
 async def db_session():
     """
-    Создаёт тестовую сессию БД в памяти (SQLite).
+    Creates test DB session in memory (SQLite).
 
-    Использует SQLite для скорости тестов.
+    Uses SQLite for fast tests.
     """
     from src.database.db import Base
 
-    # Создаём движок в памяти
+    # Create in-memory engine
     engine = create_async_engine(
         "sqlite+aiosqlite:///:memory:",
         echo=False,
         future=True,
     )
 
-    # Создаём таблицы
+    # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Создаём сессию
+    # Create session
     async_session = async_sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
@@ -110,7 +110,7 @@ async def db_session():
     async with async_session() as session:
         yield session
 
-    # Удаляем таблицы
+    # Drop tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 

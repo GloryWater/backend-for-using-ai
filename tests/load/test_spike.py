@@ -1,11 +1,11 @@
 """
-Spike тесты для проверки реакции на резкие скачки нагрузки.
+Spike tests for reaction to sudden load spikes.
 
-Тестирует как система справляется с внезапными всплесками трафика.
+Tests how the system handles sudden traffic bursts.
 
-Запуск:
-    pytest tests/load/test_spike.py -v --load  # Быстрый тест
-    pytest tests/load/test_spike.py -v --load --full-mode  # Полный тест
+Run:
+    pytest tests/load/test_spike.py -v --load  # Fast test
+    pytest tests/load/test_spike.py -v --load --full-mode  # Full test
 """
 
 import asyncio
@@ -29,28 +29,28 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.spike
 class TestSpikeTraffic:
-    """Spike тесты трафика."""
+    """Spike traffic tests."""
 
     @pytest.mark.asyncio
     async def test_sudden_traffic_spike(self, request):
         """
-        Тест внезапного скачка трафика.
+        Sudden traffic spike test.
 
-        Сценарий (быстрый режим):
-            1. Базовая нагрузка (3 пользователей) - 10 секунд
-            2. Резкий скачок (10 пользователей) - 5 секунд
-            3. Возврат к базовой нагрузке - 10 секунд
+        Scenario (fast mode):
+            1. Baseline load (3 users) - 10 seconds
+            2. Sharp spike (10 users) - 5 seconds
+            3. Return to baseline - 10 seconds
 
-        Сценарий (полный режим):
-            1. Базовая нагрузка (5 пользователей) - 30 секунд
-            2. Резкий скачок (50 пользователей) - 10 секунд
-            3. Возврат к базовой нагрузке - 30 секунд
+        Scenario (full mode):
+            1. Baseline load (5 users) - 30 seconds
+            2. Sharp spike (50 users) - 10 seconds
+            3. Return to baseline - 30 seconds
 
-        Цель: Проверить восстановление после пика.
+        Goal: Verify recovery after peak.
         """
         config = LoadTestConfig.from_pytest_config(request)
 
-        # Настраиваем длительности в зависимости от режима
+        # Configure durations based on mode
         if config.full_mode:
             baseline_users = 5
             spike_users = config.spike_users
@@ -78,7 +78,7 @@ class TestSpikeTraffic:
                     await asyncio.sleep(0.1)
 
             async def traffic_controller():
-                """Контроллер трафика."""
+                """Traffic controller."""
                 nonlocal active_workers
                 current_phase = "pre_spike"
                 target_users = baseline_users
@@ -136,11 +136,11 @@ class TestSpikeTraffic:
 
 @pytest.mark.spike
 class TestSpikeAuthEndpoint:
-    """Spike тесты для /auth endpoint."""
+    """Spike tests for /auth endpoint."""
 
     @pytest.mark.asyncio
     async def test_auth_spike(self, request):
-        """Spike тест аутентификации."""
+        """Authentication spike test."""
         config = LoadTestConfig.from_pytest_config(request)
         config.concurrent_users = config.spike_users // 2
         config.test_duration_seconds = 10
@@ -179,16 +179,16 @@ class TestSpikeAuthEndpoint:
 
 @pytest.mark.spike
 class TestSpikeEditEndpoint:
-    """Spike тесты для /edit endpoint."""
+    """Spike tests for /edit endpoint."""
 
     @pytest.mark.asyncio
     async def test_edit_spike(self, request):
-        """Spike тест редактирования."""
+        """Editing spike test."""
         config = LoadTestConfig.from_pytest_config(request)
         config.concurrent_users = 5
         config.test_duration_seconds = 10
         metrics = LoadTestMetrics()
-        test_texts = [f"Продам гараж {i}" for i in range(10)]
+        test_texts = [f"Sell garage {i}" for i in range(10)]
 
         async with LoadTestSession(config) as session:
             session.metrics = metrics

@@ -1,5 +1,5 @@
 """
-Тесты для rate limiting middleware.
+Tests for rate limiting middleware.
 """
 
 import pytest
@@ -13,10 +13,10 @@ from src.middleware.rate_limit import (
 
 
 class TestRateLimiter:
-    """Тесты для RateLimiter."""
+    """Tests for RateLimiter."""
 
     def test_rate_limiter_allows_within_limit(self):
-        """Rate limiter разрешает запросы в пределах лимита."""
+        """Rate limiter allows requests within limit."""
         limiter = RateLimiter(
             default_config=RateLimitConfig(
                 requests=5,
@@ -32,7 +32,7 @@ class TestRateLimiter:
             assert headers["X-RateLimit-Remaining"] == str(4 - i)
 
     def test_rate_limiter_blocks_over_limit(self):
-        """Rate limiter блокирует превышение лимита."""
+        """Rate limiter blocks exceeding limit."""
         limiter = RateLimiter(
             default_config=RateLimitConfig(
                 requests=3,
@@ -53,7 +53,7 @@ class TestRateLimiter:
         assert headers["X-RateLimit-Remaining"] == "0"
 
     def test_rate_limiter_per_client_isolation(self):
-        """Rate limiter изолирует клиентов друг от друга."""
+        """Rate limiter isolates clients from each other."""
         limiter = RateLimiter(
             default_config=RateLimitConfig(
                 requests=2,
@@ -62,20 +62,20 @@ class TestRateLimiter:
             )
         )
 
-        # Клиент 1 исчерпывает лимит
+        # Client 1 exhausts limit
         for _ in range(2):
             limiter.is_allowed("client_a", "/test")
 
-        # Клиент 1 блокируется
+        # Client 1 is blocked
         is_allowed_a, _ = limiter.is_allowed("client_a", "/test")
         assert is_allowed_a is False
 
-        # Клиент 2 всё ещё может делать запросы
+        # Client 2 can still make requests
         is_allowed_b, _ = limiter.is_allowed("client_b", "/test")
         assert is_allowed_b is True
 
     def test_rate_limiter_different_paths(self):
-        """Rate limiter поддерживает разные конфигурации для путей."""
+        """Rate limiter supports different configurations for paths."""
         limiter = RateLimiter(
             default_config=RateLimitConfig(
                 requests=10,
@@ -84,7 +84,7 @@ class TestRateLimiter:
             )
         )
 
-        # Настраиваем строгий лимит для /auth
+        # Configure strict limit for /auth
         limiter.configure(
             "/auth",
             RateLimitConfig(
@@ -94,38 +94,38 @@ class TestRateLimiter:
             ),
         )
 
-        # /auth имеет строгий лимит
+        # /auth has strict limit
         for _ in range(2):
             limiter.is_allowed("client_3", "/auth")
 
         is_allowed, _ = limiter.is_allowed("client_3", "/auth")
         assert is_allowed is False
 
-        # Сбрасываем клиента для /test (это другой клиент)
-        # /test всё ещё имеет мягкий лимит
+        # Reset client for /test (this is a different client)
+        # /test still has soft limit
         is_allowed, _ = limiter.is_allowed("client_3_test", "/test")
         assert is_allowed is True
 
 
 class TestCreateRateLimiter:
-    """Тесты для create_rate_limiter."""
+    """Tests for create_rate_limiter."""
 
     def test_create_rate_limiter_defaults(self):
-        """create_rate_limiter создаёт лимитер с настройками по умолчанию."""
+        """create_rate_limiter creates limiter with default settings."""
         limiter = create_rate_limiter()
 
-        # Проверка конфигурации для /auth
+        # Check configuration for /auth
         config = limiter._get_config("/auth")
         assert config.requests == 10
         assert config.window_seconds == 60
         assert config.block_duration_seconds == 900
 
-        # Проверка конфигурации для /edit
+        # Check configuration for /edit
         config = limiter._get_config("/edit")
         assert config.requests == 30
         assert config.window_seconds == 60
 
-        # Проверка конфигурации по умолчанию
+        # Check default configuration
         config = limiter._get_config("/unknown")
         assert config.requests == 100
         assert config.window_seconds == 60
@@ -133,7 +133,7 @@ class TestCreateRateLimiter:
 
 @pytest.mark.asyncio
 async def test_rate_limit_middleware_integration():
-    """Интеграционный тест rate limiting middleware."""
+    """Integration test for rate limiting middleware."""
     from fastapi import FastAPI
     from src.middleware.rate_limit import RateLimitMiddleware, create_rate_limiter
 
@@ -154,13 +154,13 @@ async def test_rate_limit_middleware_integration():
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Первые 3 запроса проходят
+        # First 3 requests pass
         for i in range(3):
             response = await client.get("/test")
             assert response.status_code == 200
             assert "x-ratelimit-remaining" in response.headers
 
-        # 4-й запрос блокируется
+        # 4th request is blocked
         response = await client.get("/test")
         assert response.status_code == 429
         assert "retry_after" in response.json()
@@ -168,7 +168,7 @@ async def test_rate_limit_middleware_integration():
 
 @pytest.mark.asyncio
 async def test_health_endpoints_excluded_from_rate_limit():
-    """Health endpoints исключены из rate limiting."""
+    """Health endpoints are excluded from rate limiting."""
     from fastapi import FastAPI
     from src.middleware.rate_limit import RateLimitMiddleware, create_rate_limiter
 
@@ -193,7 +193,7 @@ async def test_health_endpoints_excluded_from_rate_limit():
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Делаем больше запросов чем лимит
+        # Make more requests than limit
         for _ in range(10):
             response = await client.get("/health")
             assert response.status_code == 200

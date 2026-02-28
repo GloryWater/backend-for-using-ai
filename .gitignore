@@ -222,3 +222,5 @@ test.py
 
 # Test files (created by pytest)
 protected/scriptV2.lua
+
+rules.md

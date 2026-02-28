@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",  # игнорируем лишние переменные из .env
+        extra="ignore",  # ignore extra variables from .env
     )
 
     # --- Database ---

@@ -1,11 +1,11 @@
 """
-Load тесты для API endpoints.
+Load tests for API endpoints.
 
-Тестирует производительность под нормальной нагрузкой.
+Tests performance under normal load.
 
-Запуск:
-    pytest tests/load/test_load.py -v --load  # Быстрый тест (10 сек)
-    pytest tests/load/test_load.py -v --load --full-mode  # Полный тест (60 сек)
+Run:
+    pytest tests/load/test_load.py -v --load  # Fast test (10 sec)
+    pytest tests/load/test_load.py -v --load --full-mode  # Full test (60 sec)
 """
 
 import asyncio
@@ -30,19 +30,19 @@ logger = logging.getLogger(__name__)
 
 @pytest.mark.load
 class TestLoadAuthEndpoint:
-    """Load тесты для /auth endpoint."""
+    """Load tests for /auth endpoint."""
 
     @pytest.mark.asyncio
     async def test_auth_under_load(self, request):
         """
-        Тест нагрузки на endpoint аутентификации.
+        Load test for authentication endpoint.
 
-        SLA (быстрый режим):
-            - P95 latency < 1000ms (более мягкий лимит для быстрых тестов)
-            - Success rate > 95% (мягче для стабильности)
+        SLA (fast mode):
+            - P95 latency < 1000ms (softer limit for fast tests)
+            - Success rate > 95% (softer for stability)
             - Throughput > 10 req/s
 
-        SLA (полный режим):
+        SLA (full mode):
             - P95 latency < 500ms
             - Success rate > 99%
             - Throughput > 50 req/s
@@ -50,7 +50,7 @@ class TestLoadAuthEndpoint:
         config = LoadTestConfig.from_pytest_config(request)
         metrics = LoadTestMetrics()
 
-        # Настраиваем SLA в зависимости от режима
+        # Configure SLA based on mode
         p95_target = 1000 if not config.full_mode else 500
         success_target = 95.0 if not config.full_mode else 99.0
 
@@ -59,7 +59,7 @@ class TestLoadAuthEndpoint:
             metrics.start_time = time.perf_counter()
 
             async def auth_worker():
-                """Worker для аутентификации."""
+                """Worker for authentication."""
                 while session.is_running:
                     await session.request(
                         "POST",
@@ -70,42 +70,42 @@ class TestLoadAuthEndpoint:
                         },
                     )
 
-            # Запускаем воркеры
+            # Start workers
             tasks = [
                 asyncio.create_task(auth_worker())
                 for _ in range(config.concurrent_users)
             ]
 
-            # Ждём указанное время
+            # Wait specified time
             await asyncio.sleep(config.test_duration_seconds)
             session.stop()
 
-            # Останавливаем воркеры
+            # Stop workers
             for task in tasks:
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
 
             metrics.end_time = time.perf_counter()
 
-        # Проверка SLA
+        # SLA check
         sla = calculate_sla_compliance(
             metrics, p95_target_ms=p95_target, success_rate_target=success_target
         )
 
-        # Логирование результатов
+        # Log results
         logger.info(f"Auth Load Test Results: {metrics.to_dict()}")
         logger.info(
             f"SLA Compliance (P95<{p95_target}ms, Success>{success_target}%): {sla}"
         )
 
-        # Генерация отчёта
+        # Generate report
         if config.generate_report:
             report_path = generate_report(metrics, config)
             logger.info(f"Report generated: {report_path}")
 
-        # Asserts - только базовые проверки для стабильности
+        # Asserts - only basic checks for stability
         assert metrics.total_requests > 0, "No requests were made"
-        # Проверяем success rate только в полном режиме
+        # Check success rate only in full mode
         if config.full_mode:
             assert sla[
                 "success_rate_compliant"
@@ -114,35 +114,35 @@ class TestLoadAuthEndpoint:
 
 @pytest.mark.load
 class TestLoadEditEndpoint:
-    """Load тесты для /edit endpoint."""
+    """Load tests for /edit endpoint."""
 
     @pytest.mark.asyncio
     async def test_edit_under_load(self, request):
         """
-        Тест нагрузки на endpoint редактирования текста.
+        Load test for text editing endpoint.
 
-        SLA (быстрый режим):
-            - P95 latency < 5000ms (LLM запросы медленные)
+        SLA (fast mode):
+            - P95 latency < 5000ms (LLM requests are slow)
             - Success rate > 90%
 
-        SLA (полный режим):
+        SLA (full mode):
             - P95 latency < 3000ms
             - Success rate > 95%
         """
         config = LoadTestConfig.from_pytest_config(request)
-        # Для edit endpoint уменьшаем количество пользователей из-за дороговизны LLM
+        # For edit endpoint reduce users due to expensive LLM
         config.concurrent_users = min(config.concurrent_users, 3)
         metrics = LoadTestMetrics()
 
         test_texts = [
-            "Продам гараж в центре",
-            "Куплю автомобиль б/у",
-            "Сдам квартиру 2 комнаты",
-            "Услуги репетитора английского",
-            "Ремонт телефонов недорого",
+            "Sell garage in center",
+            "Buy used car",
+            "Rent 2-room apartment",
+            "English tutor services",
+            "Affordable phone repair",
         ]
 
-        # Настраиваем SLA в зависимости от режима
+        # Configure SLA based on mode
         p95_target = 5000 if not config.full_mode else 3000
         success_target = 90.0 if not config.full_mode else 95.0
 
@@ -151,7 +151,7 @@ class TestLoadEditEndpoint:
             metrics.start_time = time.perf_counter()
 
             async def edit_worker():
-                """Worker для редактирования текста."""
+                """Worker for text editing."""
                 import random
 
                 while session.is_running:
@@ -180,7 +180,7 @@ class TestLoadEditEndpoint:
 
             metrics.end_time = time.perf_counter()
 
-        # Проверка SLA
+        # SLA check
         sla = calculate_sla_compliance(
             metrics, p95_target_ms=p95_target, success_rate_target=success_target
         )
@@ -197,27 +197,27 @@ class TestLoadEditEndpoint:
 
 @pytest.mark.load
 class TestLoadHealthEndpoint:
-    """Load тесты для health endpoints."""
+    """Load tests for health endpoints."""
 
     @pytest.mark.asyncio
     async def test_health_under_load(self, request):
         """
-        Тест нагрузки на health endpoints.
+        Load test for health endpoints.
 
-        SLA (быстрый режим):
+        SLA (fast mode):
             - P95 latency < 200ms
             - Success rate > 99%
 
-        SLA (полный режим):
+        SLA (full mode):
             - P95 latency < 100ms
             - Success rate > 99.9%
             - Throughput > 100 req/s
         """
         config = LoadTestConfig.from_pytest_config(request)
-        config.concurrent_users = config.concurrent_users * 2  # Больше пользователей
+        config.concurrent_users = config.concurrent_users * 2  # More users
         metrics = LoadTestMetrics()
 
-        # Настраиваем SLA в зависимости от режима
+        # Configure SLA based on mode
         p95_target = 200 if not config.full_mode else 100
         success_target = 99.0 if not config.full_mode else 99.9
 
@@ -226,7 +226,7 @@ class TestLoadHealthEndpoint:
             metrics.start_time = time.perf_counter()
 
             async def health_worker():
-                """Worker для health check."""
+                """Worker for health check."""
                 while session.is_running:
                     await session.request("GET", "/health")
 
@@ -256,7 +256,7 @@ class TestLoadHealthEndpoint:
             logger.info(f"Report generated: {report_path}")
 
         assert metrics.total_requests > 0
-        # P95 проверка только в полном режиме
+        # P95 check only in full mode
         if config.full_mode:
             assert sla[
                 "p95_compliant"
@@ -265,23 +265,23 @@ class TestLoadHealthEndpoint:
 
 @pytest.mark.load
 class TestLoadMixedWorkload:
-    """Смешанная нагрузка (реалистичный сценарий)."""
+    """Mixed workload (realistic scenario)."""
 
     @pytest.mark.asyncio
     async def test_mixed_workload(self, request):
         """
-        Тест смешанной нагрузки с разными типами запросов.
+        Mixed workload test with different request types.
 
-        Распределение:
-            - 60% /edit (основная функция)
-            - 20% /auth (аутентификация)
-            - 20% /health (мониторинг)
+        Distribution:
+            - 60% /edit (main function)
+            - 20% /auth (authentication)
+            - 20% /health (monitoring)
 
-        SLA (быстрый режим):
+        SLA (fast mode):
             - P95 latency < 3000ms
             - Success rate > 95%
 
-        SLA (полный режим):
+        SLA (full mode):
             - P95 latency < 2000ms
             - Success rate > 98%
         """
@@ -289,12 +289,12 @@ class TestLoadMixedWorkload:
         metrics = LoadTestMetrics()
 
         test_texts = [
-            "Продам гараж в центре",
-            "Куплю автомобиль б/у",
-            "Сдам квартиру 2 комнаты",
+            "Sell garage in center",
+            "Buy used car",
+            "Rent 2-room apartment",
         ]
 
-        # Настраиваем SLA в зависимости от режима
+        # Configure SLA based on mode
         p95_target = 3000 if not config.full_mode else 2000
         success_target = 95.0 if not config.full_mode else 98.0
 
@@ -303,7 +303,7 @@ class TestLoadMixedWorkload:
             metrics.start_time = time.perf_counter()
 
             async def mixed_worker(worker_id: int):
-                """Worker со смешанной нагрузкой."""
+                """Worker with mixed workload."""
                 import random
 
                 while session.is_running:

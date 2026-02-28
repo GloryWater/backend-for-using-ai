@@ -1,5 +1,5 @@
 """
-Тесты для CRUD операций с лицензиями.
+Tests for license CRUD operations.
 """
 
 import pytest
@@ -18,13 +18,13 @@ from src.database.models import License, User
 
 @pytest.fixture
 async def session(db_session):
-    """Фикстура сессии БД."""
+    """Database session fixture."""
     yield db_session
 
 
 @pytest.fixture
 async def test_user(session):
-    """Создаёт тестового пользователя."""
+    """Creates a test user."""
     user = User(telegram_id=987654, username="test_license_user")
     session.add(user)
     await session.commit()
@@ -33,12 +33,12 @@ async def test_user(session):
 
 
 class TestValidateLicense:
-    """Тесты для валидации лицензии."""
+    """Tests for license validation."""
 
     @pytest.mark.asyncio
     async def test_validate_valid_license(self, session, test_user):
-        """Валидация активной лицензии."""
-        # Создаём лицензию
+        """Validation of an active license."""
+        # Create license
         license_obj = License(
             key="valid_key_123",
             hwid=None,
@@ -49,7 +49,7 @@ class TestValidateLicense:
         session.add(license_obj)
         await session.commit()
 
-        # Валидируем
+        # Validate
         is_valid, message, status = await validate_license(
             session, "valid_key_123", "test_hwid"
         )
@@ -60,18 +60,18 @@ class TestValidateLicense:
 
     @pytest.mark.asyncio
     async def test_validate_not_found(self, session):
-        """Валидация несуществующей лицензии."""
+        """Validation of a non-existent license."""
         is_valid, message, status = await validate_license(
             session, "nonexistent_key", "test_hwid"
         )
 
         assert is_valid is False
         assert status == LicenseStatus.NOT_FOUND
-        assert "не найден" in message.lower()
+        assert "not found" in message.lower()
 
     @pytest.mark.asyncio
     async def test_validate_inactive_license(self, session, test_user):
-        """Валидация неактивной лицензии."""
+        """Validation of an inactive license."""
         license_obj = License(
             key="inactive_key",
             hwid=None,
@@ -88,11 +88,11 @@ class TestValidateLicense:
 
         assert is_valid is False
         assert status == LicenseStatus.INACTIVE
-        assert "заблокирован" in message.lower()
+        assert "blocked" in message.lower()
 
     @pytest.mark.asyncio
     async def test_validate_expired_license(self, session, test_user):
-        """Валидация просроченной лицензии."""
+        """Validation of an expired license."""
         license_obj = License(
             key="expired_key",
             hwid=None,
@@ -109,11 +109,11 @@ class TestValidateLicense:
 
         assert is_valid is False
         assert status == LicenseStatus.EXPIRED
-        assert "истек" in message.lower()
+        assert "expired" in message.lower()
 
     @pytest.mark.asyncio
     async def test_validate_hwid_lock_first_activation(self, session, test_user):
-        """HWID lock — первая активация."""
+        """HWID lock — first activation."""
         license_obj = License(
             key="hwid_test_key",
             hwid=None,
@@ -134,7 +134,7 @@ class TestValidateLicense:
 
     @pytest.mark.asyncio
     async def test_validate_hwid_mismatch(self, session, test_user):
-        """HWID lock — несовпадение HWID."""
+        """HWID lock — HWID mismatch."""
         license_obj = License(
             key="hwid_locked_key",
             hwid="existing_hwid",
@@ -155,15 +155,15 @@ class TestValidateLicense:
 
 
 class TestAddLicense:
-    """Тесты для создания/продления лицензии."""
+    """Tests for creating/extending a license."""
 
     @pytest.mark.asyncio
     async def test_add_new_license(self, session, test_user):
-        """Создание новой лицензии."""
+        """Creating a new license."""
         key = await add_license(session, owner_id=test_user.telegram_id, days=30)
 
         assert key is not None
-        assert len(key) == 32  # token_hex(16) = 32 символа
+        assert len(key) == 32  # token_hex(16) = 32 characters
 
         license_obj = await get_user_license(session, test_user.telegram_id)
         assert license_obj is not None
@@ -172,8 +172,8 @@ class TestAddLicense:
 
     @pytest.mark.asyncio
     async def test_add_license_extend_existing(self, session, test_user):
-        """Продление существующей лицензии."""
-        # Создаём существующую лицензию
+        """Extending an existing license."""
+        # Create an existing license
         initial_expires = datetime.now(timezone.utc) + timedelta(days=30)
         license_obj = License(
             key="existing_key",
@@ -185,15 +185,15 @@ class TestAddLicense:
         session.add(license_obj)
         await session.commit()
 
-        # Продлеваем
+        # Extend
         new_key = await add_license(session, owner_id=test_user.telegram_id, days=30)
 
-        assert new_key == "existing_key"  # Ключ не изменился
+        assert new_key == "existing_key"  # Key did not change
 
         await session.refresh(license_obj)
-        # Срок должен увеличиться примерно на 30 дней
+        # Term should be increased by approximately 30 days
         expected_expires = initial_expires + timedelta(days=30)
-        # Сравниваем с допуском в 2 секунды (для timezone конверсий)
+        # Compare with tolerance of 2 seconds (for timezone conversions)
         delta = abs(
             (
                 license_obj.expires_at.replace(tzinfo=timezone.utc)
@@ -206,8 +206,8 @@ class TestAddLicense:
 
     @pytest.mark.asyncio
     async def test_add_license_reactivate_expired(self, session, test_user):
-        """Реактивация просроченной лицензии."""
-        # Создаём просроченную лицензию
+        """Reactivation of an expired license."""
+        # Create an expired license
         expired_expires = datetime.now(timezone.utc) - timedelta(days=1)
         license_obj = License(
             key="expired_key",
@@ -219,15 +219,16 @@ class TestAddLicense:
         session.add(license_obj)
         await session.commit()
 
-        # Реактивируем
+        # Reactivate
         new_key = await add_license(session, owner_id=test_user.telegram_id, days=30)
 
         assert new_key == "expired_key"
 
         await session.refresh(license_obj)
         assert license_obj.is_active is True
-        assert license_obj.hwid is None  # HWID сброшен
-        # Новый срок должен быть примерно через 30 дней от сейчас
+        # HWID is preserved on reactivation (not reset anymore)
+        assert license_obj.hwid == "old_hwid"
+        # New term should be approximately 30 days from now
         expected_expires = datetime.now(timezone.utc) + timedelta(days=30)
         expires_at = license_obj.expires_at
         if expires_at.tzinfo is None:
@@ -237,44 +238,44 @@ class TestAddLicense:
 
 
 class TestTrialPeriod:
-    """Тесты для пробного периода."""
+    """Tests for trial period."""
 
     @pytest.mark.asyncio
     async def test_activate_trial_first_time(self, session, test_user):
-        """Активация пробного периода впервые."""
+        """Activating trial period for the first time."""
         key = await activate_trial_period(session, telegram_id=test_user.telegram_id)
 
         assert key is not None
 
-        # Проверяем, что пользователь помечен как использовавший trial
+        # Check that user is marked as having used trial
         await session.refresh(test_user)
         assert test_user.isUsedTrial is True
 
-        # Проверяем лицензию
+        # Check license
         license_obj = await get_user_license(session, test_user.telegram_id)
         assert license_obj is not None
         assert license_obj.key == key
 
     @pytest.mark.asyncio
     async def test_activate_trial_already_used(self, session, test_user):
-        """Повторная попытка активации пробного периода."""
-        # Первый раз
+        """Repeated attempt to activate trial period."""
+        # First time
         test_user.isUsedTrial = True
         await session.commit()
 
-        # Вторая попытка
+        # Second attempt
         key = await activate_trial_period(session, telegram_id=test_user.telegram_id)
 
-        assert key is None  # Trial уже использован
+        assert key is None  # Trial already used
 
 
 class TestResetHWID:
-    """Тесты для сброса HWID."""
+    """Tests for HWID reset."""
 
     @pytest.mark.asyncio
     async def test_reset_hwid_success(self, session, test_user):
-        """Успешный сброс HWID."""
-        # Создаём лицензию с HWID
+        """Successful HWID reset."""
+        # Create license with HWID
         license_obj = License(
             key="test_key",
             hwid="existing_hwid",
@@ -285,7 +286,7 @@ class TestResetHWID:
         session.add(license_obj)
         await session.commit()
 
-        # Сбрасываем
+        # Reset
         result = await reset_hwid(session, test_user.telegram_id)
 
         assert result is True
@@ -294,13 +295,13 @@ class TestResetHWID:
 
     @pytest.mark.asyncio
     async def test_reset_hwid_no_license(self, session, test_user):
-        """Сброс HWID при отсутствии лицензии."""
+        """HWID reset when no license exists."""
         result = await reset_hwid(session, test_user.telegram_id)
         assert result is False
 
     @pytest.mark.asyncio
     async def test_reset_hwid_already_none(self, session, test_user):
-        """Сброс HWID который уже None."""
+        """HWID reset when already None."""
         license_obj = License(
             key="test_key",
             hwid=None,
@@ -312,4 +313,4 @@ class TestResetHWID:
         await session.commit()
 
         result = await reset_hwid(session, test_user.telegram_id)
-        assert result is False  # Не было что сбрасывать
+        assert result is False  # Nothing to reset

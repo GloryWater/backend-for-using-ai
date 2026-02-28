@@ -54,11 +54,11 @@ PRICE_USD = 3.5
 dp = Dispatcher()
 
 
-# ── главное меню ──────────────────────────────────────────────
+# ── Main Menu ──────────────────────────────────────────────────
 
 
 async def show_main_menu(message: Message, *, is_edit: bool = False) -> None:
-    """Показать / обновить главное меню."""
+    """Show/update main menu."""
     text = "🏠 <b>Главное меню</b>\nВыберите действие:"
     if is_edit:
         await message.edit_text(text, reply_markup=get_main_menu())
@@ -92,7 +92,7 @@ async def cb_main_menu(callback: CallbackQuery) -> None:
     await callback.answer()
 
 
-# ── скачать загрузчик ─────────────────────────────────────────
+# ── Download Loader ─────────────────────────────────────────
 
 
 @dp.callback_query(F.data == "getfile")
@@ -105,19 +105,21 @@ async def cb_get_file(callback: CallbackQuery) -> None:
                     doc = BufferedInputFile(content, filename="loader.lua")
                     await callback.message.answer_document(
                         document=doc,
-                        caption="Вот актуальная версия скрипта.",
+                        caption="Here is the latest version of the script.",
                     )
                 else:
                     await callback.message.answer(
-                        f"Не удалось скачать файл. Код ошибки: {resp.status}"
+                        f"Failed to download file. Status code: {resp.status}"
                     )
         except Exception:
-            logger.exception("Ошибка при скачивании файла")
-            await callback.message.answer("Произошла ошибка при скачивании файла.")
+            logger.exception("Error downloading file")
+            await callback.message.answer(
+                "An error occurred while downloading the file."
+            )
     await callback.answer()
 
 
-# ── мой ключ ──────────────────────────────────────────────────
+# ── My Key ────────────────────────────────────────────────────
 
 
 @dp.callback_query(F.data == "my_key")
@@ -152,14 +154,14 @@ async def cb_reset_hwid(callback: CallbackQuery) -> None:
         success = await reset_hwid(session, callback.from_user.id)
 
     if success:
-        await callback.answer("✅ HWID успешно сброшен!", show_alert=True)
-        # обновляем экран «Мой ключ»
+        await callback.answer("✅ HWID successfully reset!", show_alert=True)
+        # Refresh "My Key" screen
         await cb_my_key(callback)
     else:
-        await callback.answer("❌ Ошибка или HWID не был привязан.", show_alert=True)
+        await callback.answer("❌ Error or HWID was not bound.", show_alert=True)
 
 
-# ── пробная версия ────────────────────────────────────────────
+# ── Trial Version ────────────────────────────────────────────
 
 
 @dp.callback_query(F.data == "get_trial")
@@ -169,26 +171,28 @@ async def cb_get_trial(callback: CallbackQuery) -> None:
 
     if key:
         await callback.message.edit_text(
-            "🔥 <b>Пробная версия активирована!</b>\n\n"
-            f"Вам выдана лицензия на <b>7 дней</b>.\n"
-            f"Ваш ключ: <code>{key}</code>\n\n"
-            "Он также доступен в разделе «Мой ключ».",
+            "🔥 <b>Trial version activated!</b>\n\n"
+            f"You have been granted a <b>7-day</b> license.\n"
+            f"Your key: <code>{key}</code>\n\n"
+            "It is also available in the 'My Key' section.",
             reply_markup=get_back_menu(),
         )
     else:
-        await callback.answer("❌ Вы уже использовали пробную версию.", show_alert=True)
+        await callback.answer(
+            "❌ You have already used the trial version.", show_alert=True
+        )
 
 
-# ── покупка ───────────────────────────────────────────────────
+# ── Purchase ───────────────────────────────────────────────────
 
 
 @dp.callback_query(F.data == "buy_key")
 async def cb_buy_key(callback: CallbackQuery) -> None:
     await callback.message.edit_text(
-        "💳 <b>Выберите метод оплаты:</b>\n"
-        "Лицензия выдаётся на 30 дней.\n"
-        f"Стоимость составляет <b>{PRICE_RUB} RUB</b>.\n"
-        "Стоимость указана без учёта комиссий сервисов.",
+        "💳 <b>Select payment method:</b>\n"
+        "License is valid for 30 days.\n"
+        f"Price is <b>{PRICE_RUB} RUB</b>.\n"
+        "Price does not include service fees.",
         reply_markup=get_payment_methods_menu(),
     )
     await callback.answer()
@@ -200,12 +204,12 @@ async def cb_buy_key(callback: CallbackQuery) -> None:
 @dp.callback_query(F.data == "pay_stars")
 async def cb_pay_stars(callback: CallbackQuery) -> None:
     await callback.message.answer_invoice(
-        title="Лицензия AdManager (30 дней)",
-        description="Доступ к скрипту редактирования объявлений.",
+        title="AdManager License (30 days)",
+        description="Access to ad text editing script.",
         payload="license_30_days",
         provider_token="",
         currency="XTR",
-        prices=[LabeledPrice(label="Лицензия", amount=PRICE_STARS)],
+        prices=[LabeledPrice(label="License", amount=PRICE_STARS)],
         start_parameter="buy_license",
     )
     await callback.answer()
@@ -225,14 +229,14 @@ async def success_payment_handler(message: Message) -> None:
         key = await add_license(session, owner_id=message.from_user.id, days=30)
 
     await message.answer(
-        "✅ <b>Оплата прошла успешно!</b>\n\n"
-        f"Твой ключ: <code>{key}</code>\n"
-        "Он также доступен в меню «Мой ключ».",
+        "✅ <b>Payment successful!</b>\n\n"
+        f"Your key: <code>{key}</code>\n"
+        "It is also available in the 'My Key' menu.",
     )
     await show_main_menu(message)
 
 
-# ── Криптовалюта (CryptoCloud) ────────────────────────────────
+# ── Cryptocurrency (CryptoCloud) ────────────────────────────────
 
 
 @dp.callback_query(F.data == "pay_crypto")
@@ -240,12 +244,12 @@ async def cb_pay_crypto(callback: CallbackQuery) -> None:
     telegram_id = callback.from_user.id
     order_id = f"{telegram_id}_{int(time.time())}"
 
-    await callback.message.edit_text("⏳ Генерирую ссылку на оплату...")
+    await callback.message.edit_text("⏳ Generating payment link...")
 
     invoice = await create_invoice(amount=PRICE_USD, order_id=order_id, currency="USD")
     if not invoice:
         await callback.message.edit_text(
-            "❌ Не удалось создать счёт. Попробуйте позже.",
+            "❌ Failed to create invoice. Please try again later.",
             reply_markup=get_back_menu(),
         )
         return
@@ -257,13 +261,13 @@ async def cb_pay_crypto(callback: CallbackQuery) -> None:
         try:
             await add_payment(session, payment_uuid, telegram_id)
         except Exception:
-            logger.exception("Ошибка при сохранении платежа %s", payment_uuid)
+            logger.exception("Error saving payment %s", payment_uuid)
 
     await callback.message.edit_text(
-        "<b>Оплата криптовалютой</b>\n\n"
-        f"Сумма: <b>{PRICE_USD} USD</b>\n"
-        "Нажмите кнопку ниже для оплаты.\n"
-        "После оплаты нажмите «Проверить оплату».",
+        "<b>Cryptocurrency Payment</b>\n\n"
+        f"Amount: <b>{PRICE_USD} USD</b>\n"
+        "Click the button below to pay.\n"
+        "After payment, click 'Check Payment'.",
         reply_markup=get_crypto_payment_menu(pay_url, payment_uuid, PRICE_USD),
     )
     await callback.answer()
@@ -276,7 +280,7 @@ async def cb_check_crypto(callback: CallbackQuery) -> None:
     is_paid = await check_invoice_status(payment_uuid)
     if not is_paid:
         await callback.answer(
-            "❌ Оплата ещё не подтверждена. Попробуйте чуть позже.",
+            "❌ Payment not yet confirmed. Please try again later.",
             show_alert=True,
         )
         return
@@ -285,45 +289,45 @@ async def cb_check_crypto(callback: CallbackQuery) -> None:
         key = await add_license(session, owner_id=callback.from_user.id, days=30)
 
     await callback.message.edit_text(
-        "✅ <b>Оплата прошла успешно!</b>\n\n" f"Твой ключ: <code>{key}</code>",
+        f"✅ <b>Payment successful!</b>\n\nYour key: <code>{key}</code>",
         reply_markup=get_back_menu(),
     )
     await callback.answer()
 
 
-# ── Tribute (карта) ───────────────────────────────────────────
+# ── Tribute (Card) ───────────────────────────────────────────
 
 
 @dp.callback_query(F.data == "pay_tribute")
 async def cb_pay_tribute(callback: CallbackQuery) -> None:
     await callback.message.edit_text(
-        "<b>Оплата банковской картой (Tribute)</b>\n\n"
-        f"Сумма: <b>{PRICE_RUB} RUB</b>\n"
-        "Нажмите кнопку ниже, чтобы перейти к оплате.\n"
-        "Лицензия активируется автоматически после успешного платежа.",
+        "<b>Bank Card Payment (Tribute)</b>\n\n"
+        f"Amount: <b>{PRICE_RUB} RUB</b>\n"
+        "Click the button below to pay.\n"
+        "License will be activated automatically after successful payment.",
         reply_markup=get_tribute_payment_menu(TRIBUTE_URL, PRICE_RUB),
     )
     await callback.answer()
 
 
-# ── поддержка ─────────────────────────────────────────────────
+# ── Support ───────────────────────────────────────────────────
 
 
 @dp.callback_query(F.data == "support")
 async def cb_support(callback: CallbackQuery) -> None:
     await callback.message.edit_text(
-        "<b>Нашли ошибку?</b>\n\n" "Свяжитесь с разработчиком:\n" "@cnn_helper_support",
+        "<b>Found a bug?</b>\n\nContact the developer:\n@cnn_helper_support",
         reply_markup=get_back_menu(),
     )
     await callback.answer()
 
 
-# ── запуск ────────────────────────────────────────────────────
+# ── Startup ────────────────────────────────────────────────────
 
 
 async def main() -> None:
     if not BOT_TOKEN:
-        logger.critical("BOT_TOKEN не задан — завершаю работу")
+        logger.critical("BOT_TOKEN not set — exiting")
         sys.exit(1)
 
     bot = Bot(
@@ -332,7 +336,7 @@ async def main() -> None:
     )
     await bot.delete_webhook(drop_pending_updates=True)
 
-    logger.info("Бот запущен")
+    logger.info("Bot started")
     await dp.start_polling(bot)
 
 

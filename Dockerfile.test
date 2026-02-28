@@ -1,0 +1,21 @@
+FROM python:3.11-slim-bullseye
+
+WORKDIR /app
+
+# Копируем uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+ENV UV_SYSTEM_PYTHON=1
+
+# Устанавливаем зависимости
+COPY pyproject.toml uv.lock ./
+RUN uv pip install --system --no-cache .
+
+# Копируем проект
+COPY . .
+
+# Создаем директорию для результатов тестов
+RUN mkdir -p /app/test-results /app/htmlcov
+
+# Запускаем тесты
+CMD ["uv", "run", "pytest", "tests/", "-v", "--cov=src", "--cov-report=term-missing", "--cov-report=html"]

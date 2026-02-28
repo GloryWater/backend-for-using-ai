@@ -34,7 +34,7 @@ _QDRANT_TIMEOUT_SECONDS: Final[int] = 30
 
 @dataclass(frozen=True)
 class VectorStoreConfig:
-    """Конфигурация VectorStore."""
+    """VectorStore configuration."""
 
     qdrant_url: str
     collection_name: str
@@ -45,17 +45,17 @@ class VectorStoreConfig:
 
 
 def _content_id(text: str) -> int:
-    """Детерминированный uint64 ID из текста (SHA-256 → первые 8 байт).
+    """Deterministic uint64 ID from text (SHA-256 -> first 8 bytes).
 
-    Один и тот же текст всегда даёт один и тот же ID,
-    поэтому повторная загрузка не создаёт дубликатов.
+    Same text always produces the same ID,
+    so re-loading does not create duplicates.
     """
     digest = hashlib.sha256(text.encode("utf-8")).digest()
     return struct.unpack(">Q", digest[:8])[0] & 0x7FFFFFFFFFFFFFFF
 
 
 def _extract_role(item: dict, role: str) -> str | None:
-    """Извлекает content первого сообщения с заданной ролью."""
+    """Extracts content of the first message with the specified role."""
     return next(
         (m["content"] for m in item.get("messages", []) if m.get("role") == role),
         None,
@@ -63,22 +63,22 @@ def _extract_role(item: dict, role: str) -> str | None:
 
 
 class VectorStoreError(Exception):
-    """Базовое исключение для ошибок VectorStore."""
+    """Base exception for VectorStore errors."""
 
 
 class QdrantConnectionError(VectorStoreError):
-    """Ошибка подключения к Qdrant."""
+    """Qdrant connection error."""
 
 
 class VectorStore:
     """
-    Обёртка над Qdrant с инкрементальной синхронизацией из JSONL.
+    Qdrant wrapper with incremental sync from JSONL.
 
     Features:
-        - Retry logic для всех операций с Qdrant
-        - Timeout на все запросы
-        - Детальное логирование
-        - Проверка подключения при инициализации
+        - Retry logic for all Qdrant operations
+        - Timeout for all requests
+        - Detailed logging
+        - Connection check on initialization
     """
 
     def __init__(
@@ -93,18 +93,18 @@ class VectorStore:
 
     @property
     def is_initialized(self) -> bool:
-        """Проверяет, инициализирован ли VectorStore."""
+        """Checks if VectorStore is initialized."""
         return self._initialized
 
     async def initialize(self, data_file: str) -> None:
         """
-        Создаёт коллекцию (если нет) и дозагружает новые примеры.
+        Creates collection (if not exists) and loads new examples.
 
         Args:
-            data_file: Путь к JSONL файлу с примерами
+            data_file: Path to JSONL file with examples
 
         Raises:
-            QdrantConnectionError: Если не удалось подключиться к Qdrant
+            QdrantConnectionError: If failed to connect to Qdrant
         """
         try:
             self._client = AsyncQdrantClient(
@@ -135,16 +135,16 @@ class VectorStore:
 
     async def find_similar(self, query: str) -> list[dict]:
         """
-        Возвращает payload'ы ближайших примеров.
+        Returns payloads of nearest examples.
 
         Args:
-            query: Текст запроса
+            query: Query text
 
         Returns:
-            Список payload найденных примеров
+            List of payloads from found examples
 
         Raises:
-            VectorStoreError: Если произошла ошибка поиска
+            VectorStoreError: If search error occurs
         """
         if not self._initialized or not self._client:
             logger.warning("VectorStore not initialized, returning empty results")
@@ -175,7 +175,7 @@ class VectorStore:
             return []
 
     async def close(self) -> None:
-        """Закрывает соединение с Qdrant."""
+        """Closes connection to Qdrant."""
         if self._client:
             await self._client.close()
             self._initialized = False
@@ -184,7 +184,7 @@ class VectorStore:
     # ── private ──────────────────────────────────────────────
 
     async def _check_connection(self) -> None:
-        """Проверяет подключение к Qdrant."""
+        """Checks connection to Qdrant."""
         if not self._client:
             raise QdrantConnectionError("Client not initialized")
 
@@ -194,7 +194,7 @@ class VectorStore:
             raise QdrantConnectionError(f"Qdrant connection failed: {e}") from e
 
     async def _execute_with_retry(self, func, *args, **kwargs):
-        """Выполняет функцию с retry logic."""
+        """Executes function with retry logic."""
         last_exception = None
 
         for attempt in range(1, _MAX_RETRIES + 1):
@@ -222,7 +222,7 @@ class VectorStore:
         ) from last_exception
 
     async def _ensure_collection_exists(self) -> None:
-        """Создаёт коллекцию если она не существует."""
+        """Creates collection if it does not exist."""
         if not self._client:
             raise QdrantConnectionError("Client not initialized")
 
@@ -250,10 +250,10 @@ class VectorStore:
 
     async def _sync_from_file(self, path: str) -> None:
         """
-        Потоково читает JSONL построчно, добавляет только отсутствующие точки.
+        Streams JSONL line by line, adds only missing points.
 
-        Файл НЕ загружается в память целиком — Python file iterator
-        читает по одной строке за раз.
+        File is NOT loaded into memory entirely — Python file iterator
+        reads one line at a time.
         """
         if not os.path.exists(path):
             logger.warning("Data file '%s' not found.", path)
@@ -293,7 +293,7 @@ class VectorStore:
                     total_skipped += skipped
                     batch.clear()
 
-        # Остаток
+        # Remainder
         if batch:
             added, skipped = await self._upsert_missing(batch)
             total_added += added
@@ -309,7 +309,7 @@ class VectorStore:
     async def _upsert_missing(
         self, batch: list[tuple[int, str, dict]]
     ) -> tuple[int, int]:
-        """Проверяет какие ID уже есть в Qdrant, вставляет только новые."""
+        """Checks which IDs already exist in Qdrant, inserts only new ones."""
         if not self._client:
             raise QdrantConnectionError("Client not initialized")
 
@@ -328,10 +328,10 @@ class VectorStore:
             existing_ids = {p.id for p in existing_points}
         except Exception:
             logger.exception("Error checking existing points")
-            # Если не удалось проверить, пытаемся вставить всё (Qdrant обработает дубликаты)
+            # If check failed, try to insert all (Qdrant will handle duplicates)
             existing_ids = set()
 
-        # Оставляем только новые
+        # Keep only new ones
         new = [
             (pid, text, payload)
             for pid, text, payload in batch

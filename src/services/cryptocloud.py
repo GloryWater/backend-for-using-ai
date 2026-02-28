@@ -11,13 +11,13 @@ import aiohttp
 API_KEY = os.getenv("CRYPTOCLOUD_API_KEY")
 SHOP_ID = os.getenv("CRYPTOCLOUD_SHOP_ID")
 
-# Базовый URL
+# Base URL
 BASE_URL = "https://api.cryptocloud.plus/v2"
 
 
 async def create_invoice(amount: float, order_id: str, currency: str = "USD"):
     """
-    Создает счет на оплату.
+    Creates an invoice.
     """
     url = f"{BASE_URL}/invoice/create"
 
@@ -26,9 +26,9 @@ async def create_invoice(amount: float, order_id: str, currency: str = "USD"):
     payload = {
         "shop_id": SHOP_ID,
         "amount": amount,
-        "currency": currency,  # Валюта цены (USD), платить будут криптой
-        "order_id": order_id,  # Твой уникальный ID заказа
-        # "email": "user@example.com" # Можно не передавать
+        "currency": currency,  # Currency (USD), payment will be in crypto
+        "order_id": order_id,  # Your unique order ID
+        # "email": "user@example.com" # Optional
     }
 
     async with aiohttp.ClientSession() as session:
@@ -36,12 +36,12 @@ async def create_invoice(amount: float, order_id: str, currency: str = "USD"):
             async with session.post(url, json=payload, headers=headers) as response:
                 result = await response.json()
 
-                # CryptoCloud возвращает status="success" или status_code=200
+                # CryptoCloud returns status="success" or status_code=200
                 if response.status == 200 and result.get("status") == "success":
                     return {
-                        # Ссылка на страницу оплаты
+                        # Payment page URL
                         "url": result["result"]["link"],
-                        # UUID инвойса для проверки
+                        # Invoice UUID for verification
                         "uuid": result["result"]["uuid"],
                     }
                 else:
@@ -54,7 +54,7 @@ async def create_invoice(amount: float, order_id: str, currency: str = "USD"):
 
 async def check_invoice_status(uuid: str):
     """
-    Проверяет статус платежа по UUID инвойса (не order_id!).
+    Checks payment status by invoice UUID (not order_id!).
     """
     url = f"{BASE_URL}invoice/info"
 
@@ -68,9 +68,9 @@ async def check_invoice_status(uuid: str):
                 result = await response.json()
 
                 if response.status == 200 and result.get("status") == "success":
-                    # Статусы: created, paid, partial, canceled
+                    # Statuses: created, paid, partial, canceled
                     payment_status = result["result"]["status"]
-                    # Проверяем, что статус 'paid' (или 'overpaid' если есть)
+                    # Check if status is 'paid' (or 'overpaid' if exists)
                     return payment_status == "paid"
                 return False
         except Exception as e:
