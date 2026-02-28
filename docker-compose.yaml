@@ -10,8 +10,6 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
-    # Оставляем доступ только изнутри сервера (безопасность)
-    # Если нужно подключаться с компа — используй SSH Tunnel
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -38,31 +36,32 @@ services:
   # API Backend (FastAPI)
   # ---------------------------------------------------
   backend:
-    # 👇 Тот самый образ, который собирает GitHub Actions
-    image: ghcr.io/GloryWater/admanager:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: admanager_api
     restart: always
     depends_on:
       db:
-        condition: service_healthy # Ждем, пока база реально запустится
+        condition: service_healthy
       qdrant:
         condition: service_started
     env_file:
       - .env
-    # Команда запуска API
     command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8002"]
     ports:
       - "8002:8002"
-    # Метка для Watchtower: "Обновляй меня!"
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - .:/app
+      - /app/__pycache__
 
   # ---------------------------------------------------
   # Telegram Bot (Aiogram)
   # ---------------------------------------------------
   bot:
-    # 👇 Используем ТОТ ЖЕ САМЫЙ образ, но другую команду
-    image: ghcr.io/GloryWater/admanager:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: admanager_bot
     restart: always
     depends_on:
@@ -70,26 +69,7 @@ services:
       - db
     env_file:
       - .env
-    # Команда запуска бота
     command: ["python", "-m", "src.bot.bot"]
-    # Метка для Watchtower
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-
-  # ---------------------------------------------------
-  # Автоматизатор обновлений (CD)
-  # ---------------------------------------------------
-  watchtower:
-    image: containrrr/watchtower
-    container_name: watchtower
-    restart: always
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      # 👇 Это нужно, чтобы Watchtower мог авторизоваться в приватном GitHub Registry
-      # Предполагается, что ты сделал `docker login` под root пользователем
-      - /root/.docker/config.json:/config.json
-    # Проверять обновления каждые 30 сек, удалять старые образы, обновлять даже если были ошибки
-    command: --interval 30 --cleanup --include-restarting
 
 volumes:
   postgres_data:
