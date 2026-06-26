@@ -1,589 +1,537 @@
-<!--
-  AdManager — AI-Powered Ad Text Editing Service
-  Comprehensive README following industry best practices
--->
+# AdManager — AI-сервис для редактирования рекламных объявлений
 
-# AdManager — AI-Powered Ad Text Editing Service
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB)](pyproject.toml)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688)](pyproject.toml)
+[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-configured-2496ED)](docker-compose.yaml)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1)](docker-compose.yaml)
+[![Qdrant](https://img.shields.io/badge/Qdrant-vector%20DB-DC244C)](docker-compose.yaml)
+[![License](https://img.shields.io/badge/License-Proprietary-red)](LICENSE)
 
-<div align="center">
+`AdManager` — backend-проект для AI-редактирования рекламных текстов. Сервис объединяет FastAPI API, проверку лицензий с HWID-привязкой, RAG-поиск похожих объявлений в Qdrant, Telegram-бота и webhook-интеграции для платежных сценариев.
 
-![AdManager Logo](https://via.placeholder.com/200x200?text=AdManager "AdManager Logo - AI-powered advertising text editor")
+Проект ориентирован на backend/API-интеграцию: локально можно проверить запуск контейнеров, OpenAPI-документацию, health checks, загрузку RAG-коллекции и полный `POST /edit` flow. Сценарий `/edit` проверен локально с synthetic license/HWID, созданными напрямую в PostgreSQL через Docker Compose, и LLM-настройками из существующего `.env`.
 
-**AI-сервис для автоматического редактирования рекламных объявлений**
+## Демо
 
-[![Python Version](https://img.shields.io/badge/python-3.11-blue.svg "Python 3.11+")](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg "FastAPI 0.110+")](https://fastapi.tiangolo.com/)
-[![License](https://img.shields.io/badge/license-Proprietary-red.svg "Proprietary License")](LICENSE)
-[![CI](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml/badge.svg "CI/CD Pipeline")](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/ci.yml)
-[![CD](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/cd.yml/badge.svg "Deployment Pipeline")](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/cd.yml)
-[![Load Tests](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/load-tests.yml/badge.svg "Load Testing")](https://github.com/GloryWater/backend-for-using-ai/actions/workflows/load-tests.yml)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json "Ruff Linter")](https://github.com/astral-sh/ruff)
-[![Docker](https://img.shields.io/badge/docker--compose-ready-blue.svg "Docker Compose Ready")](docker-compose.yaml)
-[![Coverage](https://img.shields.io/badge/coverage-65%25-yellow.svg "Test Coverage 65%")](tests/)
+Ниже показан локальный demo-запуск backend, PostgreSQL и Qdrant. Скриншоты сделаны с реально запущенного сервиса на `localhost:8002`.
 
-</div>
+![Swagger UI с основными endpoints](docs/assets/readme/01-swagger-overview.png)
 
----
+![ReDoc overview](docs/assets/readme/02-redoc-overview.png)
 
-## 📋 Table of Contents
+![Health checks и loader version](docs/assets/readme/03-health-checks.png)
 
-<details>
-<summary>Click to expand table of contents</summary>
+![Docker Compose services](docs/assets/readme/04-docker-services.png)
 
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Quickstart](#-quickstart)
-- [Environment Variables](#-environment-variables)
-- [API Endpoints](#-api-endpoints)
-- [Development](#-development)
-- [CI/CD](#-cicd)
-- [Testing](#-testing)
-- [License](#-license)
-- [Support](#-support)
+![Qdrant dashboard с коллекцией ad_examples](docs/assets/readme/05-qdrant-dashboard.png)
 
-</details>
+![Qdrant collection API response](docs/assets/readme/06-qdrant-collection.png)
 
----
+[Смотреть короткую демонстрацию API flow](docs/assets/readme/demo-api-flow.mp4)
 
-## ✨ Features
+![Проверенный POST /edit запрос](docs/assets/readme/07-edit-endpoint-demo.png)
 
-### Core Functionality
+![Проверенный POST /edit ответ](docs/assets/readme/08-edit-response-terminal.png)
 
-<div align="center">
+[Смотреть demo-flow `/edit`](docs/assets/readme/demo-edit-flow.mp4)
 
-| Feature | Description |
-|---------|-------------|
-| **🤖 AI Text Editing** | Автоматическое редактирование рекламных текстов с использованием LLM (GPT-4o-mini) и RAG-системы |
-| **📚 Vector Search** | Поиск похожих объявлений в базе знаний (Qdrant, 6494+ примеров) |
-| **🔐 License Management** | Система лицензирования с HWID-привязкой и пробным периодом (7 дней) |
-| **💳 Multiple Payment Methods** | Telegram Stars, CryptoCloud (криптовалюта), Tribute (банковские карты) |
-| **🤖 Telegram Bot** | Удобное взаимодействие с пользователями через Telegram-бота |
-| **⚡ Rate Limiting** | Защита от злоупотреблений с настраиваемыми лимитами |
+## Возможности
 
-</div>
+### Основные возможности
 
-### Technical Features
+| Возможность | Статус проверки | Детали |
+|---|---|---|
+| AI-редактирование объявлений | Проверено локально | `POST /edit` проверяет `key` и `hwid`, выполняет RAG-поиск в Qdrant, вызывает OpenAI-compatible LLM provider и возвращает `{"result": "..."}`. |
+| Лицензирование и HWID | Покрыто тестами | Лицензия активируется при первом HWID, отклоняет истекшие, заблокированные и привязанные к другому HWID ключи. |
+| Выдача защищенного Lua payload | Предусмотрено кодом | `POST /auth` валидирует лицензию и возвращает XOR + Base64 содержимое файла из `SCRIPT_PATH`. |
+| Loader version endpoint | Проверено локально | `GET /loader/version` читает `loader_version.json`. |
+| RAG-поиск похожих объявлений | Проверено локально | Qdrant collection `ad_examples` создана и заполнена 6493 точками из `src/AI/data.jsonl`. |
+| Telegram-бот | Проверено на запуск | Aiogram bot стартует в polling mode с текущим `.env`; пользовательский диалог не снимался, чтобы не публиковать приватные Telegram-данные. |
+| Платежные интеграции | Предусмотрено кодом | Есть CryptoCloud callback, Tribute webhook с HMAC-проверкой и Telegram Stars flow в bot-коде. Реальные платежные операции не выполнялись. |
 
-- **🚀 High Performance** — Async FastAPI backend с uvicorn
-- **🗄️ PostgreSQL + AsyncPG** — Асинхронная работа с базой данных
-- **🎯 Qdrant Vector DB** — Быстрый семантический поиск (paraphrase-multilingual-MiniLM-L12-v2)
-- **🔄 Auto-Updates** — Watchtower для автоматического обновления контейнеров
-- **🧪 Comprehensive Testing** — Unit, integration, load, stress, soak, spike, chaos тесты
-- **📊 Health Checks** — Kubernetes-ready endpoints для мониторинга
+### Технические возможности
 
----
+- FastAPI application с OpenAPI/Swagger/ReDoc.
+- Асинхронный PostgreSQL доступ через SQLAlchemy и `asyncpg`.
+- Alembic-инфраструктура для миграций.
+- Qdrant vector storage с incremental sync из JSONL.
+- Embeddings через `sentence-transformers`.
+- OpenAI-compatible LLM client через `openai.AsyncOpenAI`.
+- In-memory rate limiting middleware для API abuse protection.
+- Docker Compose для backend, PostgreSQL, Qdrant и bot.
+- Unit/integration-style tests на `pytest`.
+- CI/CD workflows для lint, typecheck, tests, image build/push и SSH deploy.
 
-## 🏗 Architecture
+## Архитектура
 
-### System Components
+```mermaid
+flowchart TD
+    Client[API client] --> API[FastAPI backend]
+    User[Telegram user] --> Bot[aiogram bot]
 
+    API --> DB[(PostgreSQL)]
+    Bot --> DB
+
+    API --> License[License and HWID validation]
+    License --> DB
+
+    API --> AI[AIService]
+    AI --> VectorStore[VectorStore]
+    VectorStore --> Qdrant[(Qdrant)]
+    AI --> LLM[OpenAI-compatible LLM API]
+
+    Bot --> Stars[Telegram Stars]
+    Bot --> CryptoCloud[CryptoCloud invoice API]
+    Bot --> Tribute[Tribute payment page]
+
+    CryptoCloud --> Callback[POST /callback]
+    Tribute --> Webhook[POST /webhook/tribute]
+    Callback --> DB
+    Webhook --> DB
 ```
-┌─────────────────┐
-│  Telegram Bot   │ (aiogram 3.x)
-│  (контейнер)    │
-└────────┬────────┘
-         │
-         ↓
-┌─────────────────────────────────────────┐
-│          FastAPI Backend                │
-│  ┌───────────────────────────────────┐  │
-│  │  AIService (LLM + RAG)            │  │
-│  │  • OpenAI-совместимый API         │  │
-│  │  • Sentence Transformers          │  │
-│  │  • Qdrant (векторная БД)          │  │
-│  └───────────────────────────────────┘  │
-│  ┌───────────────────────────────────┐  │
-│  │  Payment Services                 │  │
-│  │  • CryptoCloud                    │  │
-│  │  • Tribute                        │  │
-│  │  • Telegram Stars                 │  │
-│  └───────────────────────────────────┘  │
-│  ┌───────────────────────────────────┐  │
-│  │  Rate Limit Middleware            │  │
-│  └───────────────────────────────────┘  │
-└──────────────────┬──────────────────────┘
-                   │
-                   ↓
-    ┌──────────────────────────┐
-    │   PostgreSQL 15          │ (основная БД)
-    │   • Users                │
-    │   • Licenses             │
-    │   • Payments             │
-    └──────────────────────────┘
-    ┌──────────────────────────┐
-    │   Qdrant                 │ (векторная БД)
-    │   • Embeddings           │
-    │   • Similarity Search    │
-    └──────────────────────────┘
-```
-
-### Data Flow (AI Editing)
 
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant API
-    participant Auth
-    participant RAG
-    participant LLM
-    participant Cache
+    participant Client as API client
+    participant API as FastAPI /edit
+    participant DB as PostgreSQL
+    participant AI as AIService
+    participant Qdrant
+    participant LLM as LLM provider
 
     Client->>API: POST /edit {key, hwid, text}
-    API->>Auth: Проверка лицензии
-    Auth-->>API: Лицензия активна ✓
-
-    alt Кэш содержит результат
-        Cache-->>API: Возврат из кэша
-    else Кэш пуст
-        API->>RAG: Поиск похожих примеров
-        RAG->>Qdrant: Vector search (top_k=10)
-        Qdrant-->>RAG: Примеры (threshold=0.5)
-        RAG-->>API: Контекст + правила
-
-        API->>LLM: Генерация текста
-        LLM-->>API: Edited text
-        API->>Cache: Сохранение результата (TTL=1h)
+    API->>DB: validate_license(key, hwid)
+    alt license invalid
+        API-->>Client: 403 {detail}
+    else license valid
+        API->>AI: edit_text(text)
+        AI->>Qdrant: find_similar(text)
+        Qdrant-->>AI: similar examples
+        AI->>LLM: chat.completions.create(prompt)
+        LLM-->>AI: edited text
+        API-->>Client: {"result": "..."}
     end
-
-    API-->>Client: {result: "edited text"}
 ```
 
----
+## Стек
 
-## 🛠 Tech Stack
+| Слой | Технология | Назначение |
+|---|---|---|
+| Backend | FastAPI, Uvicorn, Pydantic | HTTP API и OpenAPI-документация |
+| Bot | aiogram | Telegram-интерфейс для лицензий, trial и покупок |
+| Database | PostgreSQL 15 | Пользователи, лицензии, платежи |
+| ORM | SQLAlchemy async, asyncpg | Асинхронная работа с БД |
+| Migrations | Alembic | Миграционная инфраструктура |
+| Vector DB | Qdrant | Хранение embeddings и поиск похожих примеров |
+| AI/ML | OpenAI-compatible API, sentence-transformers | Генерация текста и embeddings |
+| Package manager | uv | Управление Python-зависимостями |
+| Containers | Docker Compose | Локальный и серверный запуск |
+| Quality | pytest, ruff, mypy, pre-commit | Тесты и статические проверки |
 
-<div align="center">
+## Быстрый старт
 
-| Component | Technology | Version |
-|-----------|------------|---------|
-| **Backend Framework** | FastAPI | 0.110+ |
-| **ORM** | SQLAlchemy | 2.0+ |
-| **Database** | PostgreSQL | 15 |
-| **Vector DB** | Qdrant | latest |
-| **LLM Client** | OpenAI API | 1.40+ |
-| **Embeddings** | Sentence Transformers | 3.0+ |
-| **Telegram Bot** | aiogram | 3.10+ |
-| **Containerization** | Docker Compose | v2+ |
-| **CI/CD** | GitHub Actions | latest |
-| **Package Manager** | uv | latest |
-
-</div>
-
----
-
-## 🚀 Quickstart
-
-### Prerequisites
-
-- Python 3.11+
-- Docker & Docker Compose
-- uv (Python package manager)
-
-### Option 1: Docker Compose (Recommended)
+### 1. Клонирование
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/GloryWater/backend-for-using-ai.git
 cd backend-for-using-ai
+```
 
-# 2. Create .env file (see Environment Variables section)
+### 2. Настройка окружения
+
+```bash
 cp .env.example .env
-
-# 3. Start all services
-docker-compose up -d
-
-# 4. Check logs
-docker-compose logs -f
-
-# 5. Access API docs
-# http://localhost:8002/docs
 ```
 
-### Option 2: Local Development
+Заполните `.env` безопасными значениями для локального запуска. Не коммитьте `.env`.
+
+Для полного `POST /edit` flow нужны рабочие LLM-настройки и валидная лицензия. Для локального development/demo можно создать synthetic license напрямую в PostgreSQL, как показано ниже в разделе [Проверенный demo-flow `/edit`](#проверенный-demo-flow-edit).
+
+### 3. Запуск через Docker Compose
 
 ```bash
-# 1. Install uv (if not installed)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=200
+```
 
-# 2. Clone and setup
-git clone https://github.com/GloryWater/backend-for-using-ai.git
-cd backend-for-using-ai
-uv sync
+Первый старт backend может занять время: приложение загружает модель `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` и синхронизирует Qdrant collection из `src/AI/data.jsonl`.
 
-# 3. Start PostgreSQL and Qdrant (Docker)
-docker-compose up -d db qdrant
+### 4. Проверка
 
-# 4. Run database migrations
-alembic upgrade head
+```bash
+curl -s http://localhost:8002/health | jq .
+curl -s http://localhost:8002/health/detailed | jq .
+curl -s http://localhost:8002/loader/version | jq .
+```
 
-# 5. Start the backend
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8002
+API-документация:
 
-# 6. Start the bot (separate terminal)
+- Swagger UI: `http://localhost:8002/docs`
+- ReDoc: `http://localhost:8002/redoc`
+- OpenAPI JSON: `http://localhost:8002/openapi.json`
+- Qdrant dashboard: `http://localhost:6333/dashboard`
+
+## Локальная разработка
+
+```bash
+uv sync --dev
+docker compose up -d db qdrant
+uv run alembic upgrade head
+uv run uvicorn src.main:app --reload --host 0.0.0.0 --port 8002
+```
+
+Telegram-бот запускается отдельно и требует реальный токен:
+
+```bash
 uv run python -m src.bot.bot
 ```
 
-### Verify Installation
+Если нужен только API demo без Telegram, запускайте `db`, `qdrant` и `backend`. Полный compose также стартует bot-процесс, если `BOT_TOKEN` корректно задан в `.env`.
+
+## Переменные окружения
+
+Значения берутся из `.env`; пример находится в `.env.example`.
+
+| Переменная | Обязательна | Пример | Назначение |
+|---|---:|---|---|
+| `DB_USER` | Да | `postgres` | Пользователь PostgreSQL. |
+| `DB_PASS` | Да | `local-dev-password` | Пароль PostgreSQL. |
+| `DB_NAME` | Да | `admanager` | Имя базы данных. |
+| `DB_HOST` | Да | `db` | Host PostgreSQL внутри Docker network. |
+| `DB_PORT` | Да | `5432` | Порт PostgreSQL. |
+| `LLM_API_KEY` | Да для `/edit` | `sk-...` | API key OpenAI-compatible LLM provider. |
+| `LLM_BASE_URL` | Да для `/edit` | `https://api.openai.com/v1` | Base URL LLM provider. |
+| `LLM_MODEL` | Да для `/edit` | `gpt-4o-mini` | Модель для `chat.completions`. |
+| `LLM_TEMPERATURE` | Нет | `0.7` | Temperature генерации. |
+| `LLM_MAX_TOKENS` | Нет | `500` | Максимум токенов ответа. |
+| `BOT_TOKEN` | Да для bot | `123456:...` | Telegram bot token от BotFather. |
+| `CRYPTOCLOUD_API_KEY` | Да для CryptoCloud | `...` | API key CryptoCloud. |
+| `CRYPTOCLOUD_SHOP_ID` | Да для CryptoCloud | `...` | Shop ID CryptoCloud. |
+| `CRYPTOCLOUD_SECRET` | Да для CryptoCloud | `...` | Secret для платежной интеграции. |
+| `TRIBUTE_API_KEY` | Да для Tribute | `...` | Secret для HMAC-проверки Tribute webhook. |
+| `QDRANT_URL` | Да | `http://qdrant:6333` | URL Qdrant из backend-контейнера. |
+| `QDRANT_COLLECTION` | Да | `ad_examples` | Имя коллекции с RAG-примерами. |
+| `ML_MODEL_NAME` | Да | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` | Модель embeddings. |
+| `SIMILARITY_THRESHOLD` | Нет | `0.5` | Минимальный score похожих примеров. |
+| `TOP_K_EXAMPLES` | Нет | `10` | Количество примеров для prompt context. |
+| `RULES_FILE` | Да | `src/AI/rules.xml` | XML-правила редактирования. |
+| `EXAMPLES_FILE` | Да | `src/AI/data.jsonl` | JSONL-примеры для Qdrant sync. |
+| `SCRIPT_PATH` | Да для `/auth` | `protected/scriptV2.lua` | Lua script, который выдается после проверки лицензии. |
+| `LOADER_VERSION_FILE` | Да | `loader_version.json` | Источник версии loader. |
+
+## API endpoints
+
+| Метод | Endpoint | Назначение | Credentials |
+|---|---|---|---|
+| `GET` | `/health` | Базовая проверка состояния backend. | Нет |
+| `GET` | `/health/detailed` | Проверка backend и database component. | Нет |
+| `GET` | `/health/ready` | Readiness probe. | Нет |
+| `GET` | `/health/live` | Liveness probe. | Нет |
+| `GET` | `/loader/version` | Версия и URL loader из `loader_version.json`. | Нет |
+| `POST` | `/auth` | Проверка лицензии/HWID и выдача encrypted script payload. | Валидные `key` и `hwid` |
+| `POST` | `/edit` | AI-редактирование текста объявления через license check, Qdrant/RAG и LLM. | Валидные `key`/`hwid` и LLM-настройки |
+| `POST` | `/callback` | CryptoCloud postback handler. | Реальный payment payload |
+| `POST` | `/webhook/tribute` | Tribute webhook handler с HMAC signature. | Header `trbt-signature` |
+
+## Примеры запросов
+
+Проверенные локально системные endpoints:
 
 ```bash
-# Health check
-curl http://localhost:8002/health
-
-# Detailed health check
-curl http://localhost:8002/health/detailed
-
-# Check loader version
-curl http://localhost:8002/loader/version
+curl -s http://localhost:8002/health | jq .
 ```
 
----
-
-## 🔧 Environment Variables
-
-Create a `.env` file in the project root:
-
-<details>
-<summary>Click to expand environment variables template</summary>
+```json
+{
+  "status": "healthy",
+  "version": "0.1.0",
+  "timestamp": "2026-06-26T12:43:31.979275Z",
+  "uptime_seconds": 73.724738
+}
+```
 
 ```bash
-# =============================================================================
-# DATABASE (PostgreSQL)
-# =============================================================================
-DB_USER=postgres
-DB_PASS=your_secure_password_here
-DB_NAME=admanager
-DB_HOST=db
-DB_PORT=5432
-
-# =============================================================================
-# LLM (OpenAI-compatible API)
-# =============================================================================
-LLM_API_KEY=your_llm_api_key_here
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL=gpt-4o-mini
-LLM_TEMPERATURE=0.7
-LLM_MAX_TOKENS=500
-
-# =============================================================================
-# TELEGRAM BOT
-# =============================================================================
-BOT_TOKEN=your_bot_token_from_botfather
-
-# =============================================================================
-# PAYMENT SYSTEMS
-# =============================================================================
-# CryptoCloud
-CRYPTOCLOUD_API_KEY=your_crypto_api_key
-CRYPTOCLOUD_SHOP_ID=your_shop_id
-CRYPTOCLOUD_SECRET=your_crypto_secret
-
-# Tribute (bank cards)
-TRIBUTE_API_KEY=your_tribute_key
-
-# =============================================================================
-# VECTOR DATABASE (Qdrant)
-# =============================================================================
-QDRANT_URL=http://qdrant:6333
-QDRANT_COLLECTION=ad_examples
-ML_MODEL_NAME=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-SIMILARITY_THRESHOLD=0.5
-TOP_K_EXAMPLES=10
-
-# =============================================================================
-# FILE PATHS
-# =============================================================================
-RULES_FILE=src/AI/rules.xml
-EXAMPLES_FILE=src/AI/data.jsonl
-SCRIPT_PATH=protected/scriptV2.lua
-LOADER_VERSION_FILE=loader_version.json
+curl -s http://localhost:8002/health/detailed | jq .
 ```
 
-</details>
+```json
+{
+  "status": "healthy",
+  "version": "0.1.0",
+  "components": [
+    {
+      "name": "database",
+      "status": "healthy",
+      "latency_ms": 1.63,
+      "error": null
+    }
+  ],
+  "ai_stats": null
+}
+```
 
-> **[TODO: Replace placeholder values with actual credentials before deployment]**
+```bash
+curl -s http://localhost:8002/loader/version | jq .
+```
 
----
+```json
+{
+  "version": "0.1",
+  "url": "https://glorysyntax.live/static/loader.lua"
+}
+```
 
-## 📡 API Endpoints
+## Проверенный demo-flow `/edit`
 
-### Authentication & License
+Сценарий ниже проверяет полный путь AI-редактирования текста:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/auth` | Аутентификация лицензии, получение скрипта |
-| `GET` | `/loader/version` | Проверка версии загрузчика |
+1. Backend получает `POST /edit`.
+2. PostgreSQL проверяет license key, срок действия, активность и HWID.
+3. `AIService` обращается к Qdrant collection `ad_examples` за похожими примерами.
+4. Backend выполняет запрос к OpenAI-compatible LLM provider.
+5. API возвращает отредактированный рекламный текст в поле `result`.
 
-**Example: POST /auth**
+Для локальной проверки была создана synthetic demo-лицензия `readme-demo-license-local-only` с HWID `readme-demo-hwid-local-only`. Это не production-ключ и не пользовательские данные.
+
+![Проверенный POST /edit demo-flow](docs/assets/readme/07-edit-endpoint-demo.png)
+
+![Ответ POST /edit с HTTP 200](docs/assets/readme/08-edit-response-terminal.png)
+
+[Смотреть короткое видео `/edit` demo-flow](docs/assets/readme/demo-edit-flow.mp4)
+
+### Создание локальной тестовой лицензии
+
+Команда ниже предназначена только для локального development/demo окружения. Она создает synthetic пользователя и лицензию через PostgreSQL внутри Docker Compose, не затрагивая другие записи.
+
+```bash
+docker compose exec -T db sh -lc 'psql -U "${POSTGRES_USER:-postgres}" -d "${POSTGRES_DB:-postgres}" -v ON_ERROR_STOP=1' <<'SQL'
+INSERT INTO users (telegram_id, username, "isUsedTrial")
+VALUES (900000001, 'readme_demo_user', false)
+ON CONFLICT (telegram_id) DO UPDATE
+SET username = EXCLUDED.username,
+    "isUsedTrial" = false;
+
+INSERT INTO licenses (key, hwid, is_active, expires_at, owner_id)
+VALUES (
+  'readme-demo-license-local-only',
+  'readme-demo-hwid-local-only',
+  true,
+  now() + interval '30 days',
+  900000001
+)
+ON CONFLICT (key) DO UPDATE
+SET hwid = EXCLUDED.hwid,
+    is_active = true,
+    expires_at = now() + interval '30 days',
+    owner_id = EXCLUDED.owner_id;
+SQL
+```
+
+> Не используйте demo-license в production. Не публикуйте реальные license keys и HWID.
+
+Проверенный запрос:
+
+```bash
+curl -sS -w "\nHTTP_STATUS=%{http_code}\n" -X POST http://localhost:8002/edit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "readme-demo-license-local-only",
+    "hwid": "readme-demo-hwid-local-only",
+    "text": "Продам гараж, недорого. Есть свет, сухой, документы в порядке."
+  }'
+```
+
+Проверенный ответ:
+
+```json
+{
+  "result": "Нар.ПРО / Укажите местоположение и номер гаража."
+}
+```
+
+```text
+HTTP_STATUS=200
+```
+
+Backend logs подтвердили запрос к Qdrant и LLM provider:
+
+```text
+POST http://qdrant:6333/collections/ad_examples/points/query -> 200 OK
+POST https://openrouter.ai/api/v1/chat/completions -> 200 OK
+AI edit completed: key=only***, input_len=62, output_len=48
+```
+
+Форма запроса для `/auth`:
 
 ```bash
 curl -X POST http://localhost:8002/auth \
   -H "Content-Type: application/json" \
-  -d '{"key": "abc123...", "hwid": "device-id-here"}'
-```
-
-**Response:**
-```json
-{
-  "status": "success",
-  "script_bytes": "base64_encoded_encrypted_lua_script"
-}
-```
-
-### AI Text Editing
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/edit` | Редактирование текста через AI |
-
-**Example: POST /edit**
-
-```bash
-curl -X POST http://localhost:8002/edit \
-  -H "Content-Type: application/json" \
   -d '{
-    "key": "abc123...",
-    "hwid": "device-id-here",
-    "text": "Продам гараж, недорого"
+    "key": "demo-license-key",
+    "hwid": "demo-hwid"
   }'
 ```
 
-**Response:**
-```json
-{
-  "result": "🔥 Продам просторный гараж в отличном состоянии! Цена ниже рыночной. Звоните!"
-}
+Для успешного `/auth` дополнительно нужен файл по пути `SCRIPT_PATH`. По умолчанию это `protected/scriptV2.lua`.
+
+## Telegram bot flow
+
+Telegram-бот находится в `src/bot/bot.py` и использует inline-меню из `src/bot/keyboards.py`.
+
+```mermaid
+flowchart TD
+    Start[/start] --> Register[Create or load user]
+    Register --> Menu[Main menu]
+    Menu --> Trial[7-day trial]
+    Menu --> MyKey[Show license and HWID status]
+    Menu --> Reset[Reset HWID]
+    Menu --> Download[Download loader.lua]
+    Menu --> Buy[Select payment method]
+    Buy --> Stars[Telegram Stars]
+    Buy --> Crypto[CryptoCloud invoice]
+    Buy --> Tribute[Tribute payment page]
+    Stars --> License[Create or extend license]
+    Crypto --> License
+    Tribute --> License
 ```
 
-### Payment Webhooks
+Скриншоты Telegram-диалога не включены, чтобы не публиковать реальные пользовательские данные. В проверенном Docker Compose запуске bot-контейнер успешно стартовал и перешел в polling mode с `BOT_TOKEN` из `.env`.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/callback` | CryptoCloud postback |
-| `POST` | `/webhook/tribute` | Tribute webhook |
+## Тестирование и качество кода
 
-### Health Checks
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Basic health check (200 OK) |
-| `GET` | `/health/detailed` | Детальная проверка (БД, латенси) |
-| `GET` | `/health/ready` | Readiness probe (Kubernetes) |
-| `GET` | `/health/live` | Liveness probe (Kubernetes) |
-
-### Rate Limits
-
-| Endpoint | Requests/Window | Block Duration |
-|----------|-----------------|----------------|
-| `/auth` | 10 / 1 min | 15 min |
-| `/edit` | 30 / 1 min | 5 min |
-| `/callback`, `/webhook/*` | 50 / 1 min | 5 min |
-| `/health/*` | Excluded | — |
-
----
-
-## 🛠 Development
-
-### Pre-commit Hooks
+Быстрые тесты без load-сценариев:
 
 ```bash
-# Install pre-commit hooks
-uv run pre-commit install
-
-# Run manually
-uv run pre-commit run --all-files
+uv run pytest tests/ -v --ignore=tests/load
 ```
 
-**Configured hooks:**
-- `trailing-whitespace` — удаление конечных пробелов
-- `end-of-file-fixer` — добавление конечной новой строки
-- `check-yaml` — проверка YAML синтаксиса
-- `check-added-large-files` — блокировка файлов >5MB
-- `detect-secrets` — обнаружение секретов (ключи, токены, пароли)
-- `ruff` — линтинг и автоисправление
-- `ruff-format` — форматирование кода
-- `mypy` — проверка статической типизации
+Проверенный результат локального запуска: `144 passed, 2 skipped, 2 xfailed`.
 
-### Code Quality
+Type checking:
 
 ```bash
-# Linting (Ruff)
+uv run mypy src/ --ignore-missing-imports --disable-error-code=union-attr --disable-error-code=arg-type
+```
+
+Проверенный результат: `Success: no issues found in 23 source files`.
+
+Ruff:
+
+```bash
 uvx ruff check .
-
-# Formatting (Ruff)
-uvx ruff format .
-
-# Type checking (Mypy)
-uv run mypy src/
+uvx ruff format --check .
 ```
 
-### Database Migrations
+На момент проверки `uvx ruff check .` выявляет неиспользуемые imports в тестах (`F401/F811`). Это не мешает запуску backend, но должно быть исправлено перед тем, как считать lint job зеленым.
+
+Load tests находятся в `tests/load/` и требуют явного флага:
 
 ```bash
-# Create a new migration
-alembic revision --autogenerate -m "description"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback
-alembic downgrade -1
-```
-
----
-
-## 🔄 CI/CD
-
-### Pre-commit Hooks
-
-Проект использует pre-commit для автоматической проверки кода перед коммитом.
-
-```bash
-# Установка хуков
-uv run pre-commit install
-
-# Запуск вручную
-uv run pre-commit run --all-files
-```
-
-### GitHub Actions
-
-Проект использует 3 workflow:
-
-| Workflow | Описание | Триггер |
-|----------|----------|---------|
-| **CI** | Линтинг, типизация, unit-тесты | `push`, `pull_request` в `main` |
-| **CD** | Сборка Docker, деплой с миграциями | Успешный CI при `push` в `main` |
-| **Load Tests** | Нагрузочные тесты | Вручную (`workflow_dispatch`) |
-
-**Оптимизация скорости CI:**
-- ⚡ **uv cache** — кэширование зависимостей между запусками (ускорение в 10-50 раз)
-- 📦 Кэш зависит от `uv.lock` — инвалидируется при изменении зависимостей
-- 🔄 Используется `actions/cache@v4` для сохранения кэша uv
-
-### Переменные окружения для деплоя
-
-Настройте следующие секреты в GitHub (Settings → Secrets → Actions):
-
-| Secret | Описание |
-|--------|----------|
-| `SERVER_HOST` | IP-адрес сервера |
-| `SERVER_USER` | Пользователь SSH (например, `ubuntu`) |
-| `SERVER_SSH_KEY` | Приватный SSH-ключ для деплоя |
-| `SERVER_PORT` | SSH порт (по умолчанию 22) |
-| `GITHUB_TOKEN` | Автоматически предоставляется GitHub Actions |
-
-### Процесс деплоя
-
-CD пайплайн выполняет следующие шаги:
-
-1. **Сборка Docker образа** с тегами `latest` и `<commit-sha>`
-2. **Публикация в GHCR** (GitHub Container Registry)
-3. **SSH деплой на сервер:**
-   - `git pull` для обновления конфигурации
-   - `docker-compose pull` для загрузки новых образов
-   - **`alembic upgrade head`** для применения миграций БД
-   - `docker-compose up -d` для перезапуска сервисов
-   - `docker image prune -f` для очистки старых образов
-
-⚠️ **Важно:** Миграции БД выполняются автоматически перед каждым деплоем!
-
-### Нагрузочные тесты
-
-Запускаются вручную через GitHub UI:
-
-1. Перейдите на вкладку **Actions** → **Load Tests**
-2. Нажмите **Run workflow**
-3. Выберите тип теста: `load`, `stress`, `soak`, `spike`, `chaos` или `all`
-4. Укажите длительность в минутах
-
-Результаты тестов сохраняются в артефактах на 30 дней.
-
----
-
-## 🧪 Testing
-
-### Run Tests
-
-```bash
-# Quick tests (unit)
-uv run pytest tests/ -v
-
-# With coverage
-uv run pytest --cov=src --cov-report=html
-
-# Load tests (requires --load flag)
 uv run pytest tests/load/ -v --load
-
-# Full load test suite (stress, soak, spike, chaos)
-uv run pytest tests/load/ -v --load --full-mode
 ```
 
-### Test Types
+## CI/CD
 
-| Type | Description | Flag |
-|------|-------------|------|
-| **Unit** | API, CRUD, crypto, rate limiting | — |
-| **Load** | Normal load simulation | `--load` |
-| **Stress** |极限负载测试 | `--load --full-mode` |
-| **Soak** | Long-running (memory leaks) | `--load --full-mode` |
-| **Spike** | Sudden traffic spikes | `--load --full-mode` |
-| **Chaos** | Failure injection | `--load --full-mode` |
+В репозитории есть workflows:
 
-### Test Coverage
+| Workflow | Trigger | Что делает |
+|---|---|---|
+| `.github/workflows/ci.yml` | `push`/`pull_request` в `main` | Ruff, format check, MyPy, pytest с PostgreSQL/Qdrant services, Docker build/push, production deploy после push в `main`. |
+| `.github/workflows/cd.yml` | `workflow_dispatch` | Ручной build/push в GHCR и deploy по SSH. |
+| `.github/workflows/load-tests.yml` | `workflow_dispatch` | Ручной запуск load/stress/soak/spike/chaos тестов. |
+
+Deploy steps используют GitHub Secrets: `SERVER_HOST`, `SERVER_USER` или `SERVER_USERNAME`, `SERVER_SSH_KEY`, `SERVER_PORT`, а также `GITHUB_TOKEN` для GHCR.
+
+## Структура проекта
+
+```text
+.
+├── src/
+│   ├── AI/                 # rules.xml и data.jsonl для RAG
+│   ├── bot/                # aiogram bot и keyboards
+│   ├── database/           # SQLAlchemy models, session, CRUD
+│   ├── middleware/         # rate limiting
+│   ├── routes/             # FastAPI routes
+│   ├── services/           # AI, Qdrant, payments, notifications
+│   ├── utils/              # crypto/text helpers
+│   └── main.py             # FastAPI app, lifespan, routers
+├── tests/                  # pytest suite
+│   └── load/               # load/stress/soak/spike/chaos tests
+├── alembic/                # migration infrastructure
+├── docs/assets/            # README media
+├── docker-compose.yaml
+├── Dockerfile
+├── pyproject.toml
+├── uv.lock
+├── loader_version.json
+└── README.md
+```
+
+## Troubleshooting
+
+### Порт 8002 уже занят
 
 ```bash
-# Generate coverage report
-uv run pytest --cov=src --cov-report=html
-
-# View coverage in browser
-open htmlcov/index.html  # macOS/Linux
-start htmlcov/index.html  # Windows
+lsof -i :8002
 ```
 
----
+Остановите конфликтующий процесс или измените port mapping в `docker-compose.yaml`.
 
-## 📄 License
+### PostgreSQL password authentication failed
 
-This software is **proprietary** and confidential. See the [LICENSE](LICENSE) file for details.
+Если вы меняли `DB_PASS` после первого старта, старый Docker volume может хранить PostgreSQL с прежним паролем.
 
-**Unauthorized copying, modification, distribution, or commercial use is strictly prohibited.**
+Без удаления данных можно поднять отдельный demo-stack с другими volume names. Для полного сброса локальных данных:
 
-### Key License Terms
+```bash
+docker compose down -v
+docker compose up -d --build
+```
 
-<details>
-<summary>Click to view key license terms</summary>
+Команда `down -v` удаляет локальные Docker volumes проекта, используйте ее только если данные не нужны.
 
-- ❌ **No Copying** — You may not copy, reproduce, or distribute the Software
-- ❌ **No Modification** — You may not modify or create derivative works
-- ❌ **No Reverse Engineering** — You may not decompile or disassemble the Software
-- ❌ **No Commercial Use** — You may not use this Software for commercial purposes
-- ⚠️ **Termination** — License terminates automatically upon violation of terms
+### Backend долго не отвечает после старта
 
-</details>
+Первый startup загружает embedding model и синхронизирует Qdrant:
 
-See [LICENSE](LICENSE) for the full license text.
+```bash
+docker compose logs -f backend
+```
 
----
+В логах ожидаемы сообщения про Hugging Face model download и `Qdrant sync complete`.
 
-## 📞 Support
+### Bot перезапускается или получает Telegram Unauthorized
 
-### Contact
+Проверьте `BOT_TOKEN` и логи bot-контейнера. При корректном токене в логах ожидаются сообщения о старте bot и polling mode.
 
-- **GitHub Issues:** [Create an issue](https://github.com/GloryWater/backend-for-using-ai/issues)
-- **Email:** evgeniy.sytcevich.glory@gmail.com
+```bash
+docker compose logs -f bot
+```
 
-### Documentation
+### Не работает `/edit`
 
-- **API Documentation:** `http://localhost:8002/docs` (Swagger UI)
-- **Alternative Docs:** `http://localhost:8002/redoc` (ReDoc)
+Проверьте:
 
----
+- валидность license key и HWID;
+- `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`;
+- доступность Qdrant;
+- наличие и формат `src/AI/data.jsonl`;
+- backend logs.
 
-<div align="center">
+### Docker build слишком тяжелый
 
-**AdManager v0.2.0** | Built with ❤️ using FastAPI, PostgreSQL, Qdrant, and AI
+Во время проверки build context мог быть очень большим из-за локальных директорий вроде `.venv` и cache. Для production-friendly сборки стоит добавить `.dockerignore`, исключающий `.venv`, `.git`, `.pytest_cache`, `.ruff_cache`, README-видео и другие локальные артефакты.
 
-**Proprietary Software** — All Rights Reserved
+## Безопасность
 
-</div>
+- Не коммитьте `.env`, реальные tokens, API keys, license keys, cookies и payment secrets.
+- Храните production secrets в GitHub Actions secrets или переменных окружения сервера.
+- Не публикуйте реальные license keys и HWID в issue, logs, screenshots и README.
+- Tribute webhook signature проверяется через HMAC на основе `TRIBUTE_API_KEY`.
+- `protected/scriptV2.lua` и loader payload не должны попадать в публичные логи.
+- In-memory rate limiter подходит для одного процесса; для multi-instance production deployment лучше заменить его Redis-based limiter.
+
+## Лицензия
+
+Проект распространяется на условиях proprietary license. Подробности находятся в [LICENSE](LICENSE). Не называйте проект open-source без изменения лицензии владельцем.
