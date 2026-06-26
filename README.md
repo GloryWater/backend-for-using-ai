@@ -17,8 +17,6 @@
 
 ![Swagger UI с основными endpoints](docs/assets/readme/01-swagger-overview.png)
 
-![ReDoc overview](docs/assets/readme/02-redoc-overview.png)
-
 ![Health checks и loader version](docs/assets/readme/03-health-checks.png)
 
 ![Docker Compose services](docs/assets/readme/04-docker-services.png)
